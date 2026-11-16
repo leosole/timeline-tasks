@@ -56,7 +56,7 @@ export interface TimelineController {
   statusOptions: string[];
   timelineData: TimelineData;
   /** Pass to `<Timeline scrollRef={...} />`. */
-  scrollRef: RefObject<HTMLDivElement>;
+  scrollRef: RefObject<HTMLDivElement | null>;
   /** Scrolls the timeline so today is centered. */
   scrollToToday: () => void;
   /** True while today's marker is off-screen: show your "today" button. */

@@ -58,7 +58,7 @@ export interface TimelineProps {
    * Scroll container ref, normally `useTimeline().scrollRef`, so
    * `scrollToToday()` and the scroll tracking work.
    */
-  scrollRef?: RefObject<HTMLDivElement>;
+  scrollRef?: RefObject<HTMLDivElement | null>;
   className?: string;
 }
 

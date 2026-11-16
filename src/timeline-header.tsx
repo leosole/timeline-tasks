@@ -98,7 +98,7 @@ export const TimelineHeader: React.FC<TimelineHeaderProps> = ({
             {months.map((month, index) => (
               <div
                 key={index}
-                className="flex h-full items-end border-r border-border pb-1 text-center text-xs font-medium leading-3 text-muted-foreground last:border-r-0"
+                className="flex h-full items-end justify-center border-r border-border pb-5 text-center text-xs font-medium leading-3 text-muted-foreground last:border-r-0"
                 style={{ width: `${month.span * daySize}px` }}
               >
                 {month.label.split(" ")[0]}
@@ -111,7 +111,7 @@ export const TimelineHeader: React.FC<TimelineHeaderProps> = ({
               {months.map((month, index) => (
                 <div
                   key={index}
-                  className="text-center text-xs font-medium leading-3 text-muted-foreground"
+                  className="border-r border-border text-center text-xs font-medium leading-3 text-muted-foreground last:border-r-0"
                   style={{ width: `${month.span * daySize}px` }}
                 >
                   {month.label}
@@ -122,7 +122,7 @@ export const TimelineHeader: React.FC<TimelineHeaderProps> = ({
               {weeks.map((week, index) => (
                 <div
                   key={index}
-                  className="text-center text-xs font-medium leading-3 text-muted-foreground"
+                  className="border-r border-border text-center text-xs font-medium leading-3 text-muted-foreground last:border-r-0"
                   style={{ width: `${week.span * daySize}px` }}
                 >
                   {week.label}
@@ -136,7 +136,7 @@ export const TimelineHeader: React.FC<TimelineHeaderProps> = ({
               {months.map((month, index) => (
                 <div
                   key={index}
-                  className="text-center text-xs font-medium leading-3 text-muted-foreground"
+                  className="border-r border-border text-center text-xs font-medium leading-3 text-muted-foreground last:border-r-0"
                   style={{ width: `${month.span * daySize}px` }}
                 >
                   {month.label}

@@ -5,9 +5,9 @@ import { Timeline, useTimeline, type Granularity } from "../src";
 const day = (offset: number) => dayjs().add(offset, "day").format("YYYY-MM-DD");
 
 const GRANULARITIES: Array<{ value: Granularity; label: string }> = [
-  { value: "day", label: "Dia" },
-  { value: "week", label: "Semana" },
-  { value: "month", label: "Mês" },
+  { value: "day", label: "Day" },
+  { value: "week", label: "Week" },
+  { value: "month", label: "Month" },
 ];
 
 const buildTasks = () => [
@@ -87,7 +87,7 @@ const buildTasks = () => [
 ];
 
 const controlClass =
-  "cursor-pointer rounded-md border border-neutral-300 px-2.5 py-1 text-xs font-medium hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800";
+  "cursor-pointer rounded-md border border-neutral-300 bg-white px-2.5 py-1 text-xs font-medium text-neutral-900 hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-800";
 const activeControlClass =
   "cursor-pointer rounded-md border border-neutral-900 bg-neutral-900 px-2.5 py-1 text-xs font-medium text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900";
 
@@ -128,7 +128,7 @@ export function DemoApp() {
         <input
           value={timeline.filter}
           onChange={(event) => timeline.setFilter(event.target.value)}
-          placeholder="Filtrar tarefas..."
+          placeholder="Filter tasks..."
           className="w-48 rounded-md border border-neutral-300 bg-transparent px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:border-neutral-700"
         />
 
@@ -193,7 +193,7 @@ export function DemoApp() {
                 "cursor-pointer rounded-md bg-neutral-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-neutral-700 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
               }
             >
-              Hoje
+              Today
             </button>
           )}
         </div>

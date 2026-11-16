@@ -1,4 +1,18 @@
+@layer ui-sdk;
+
 @import "../src/styles.css";
+@import "@ui-sdk/core/web.css" layer(components);
+
+/* The demo switches dark mode with the `.dark` class, not the OS preference,
+   so native controls (selects, buttons) follow the toggle instead of the
+   `color-scheme: light dark` that the ui-sdk stylesheet puts on `:root`. */
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+}
 
 /* Only the demo's own classes are scanned here; the published stylesheet is
    built from src/styles.css alone. */
