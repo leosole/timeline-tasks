@@ -449,43 +449,79 @@ Pushing a conventional commit to `main` makes
 1. work out the next version from the commits since the last tag
    (`fix:` → patch, `feat:` → minor, `BREAKING CHANGE:` → major, other types → no release);
 2. prepend the release notes to `CHANGELOG.md` and bump `package.json`;
-3. publish to npm;
+3. publish to npm over OIDC (trusted publishing, with provenance);
 4. create the git tag and GitHub release;
 5. commit the version and changelog back to `main` with `[skip ci]`.
 
-The published name is `timeline-tasks`. Nothing is published manually, and a
-commit that does not match the convention (e.g. `docs:`, `chore:`) does not
-release.
+The published name is `timeline-tasks`. Apart from the one-time bootstrap below,
+nothing is published manually, and a commit that does not match the convention
+(e.g. `docs:`, `chore:`) does not release.
 
-### Required secrets
+### Credentials: npm trusted publishing, no token
 
-Add these under **Settings → Secrets and variables → Actions** in the GitHub
-repository:
+Publishing uses [npm trusted
+publishing](https://docs.npmjs.com/trusted-publishers): GitHub Actions mints a
+short-lived OIDC token, npm exchanges it for a publish credential scoped to this
+repository and workflow, and provenance attestations are generated
+automatically. There is no `NPM_TOKEN` to create, store or rotate — and none
+should be set, because a token in the job environment takes precedence over
+OIDC.
 
-| Secret | Required | What it is |
-| --- | --- | --- |
-| `NPM_TOKEN` | Yes | npm access token that may publish `timeline-tasks` |
-| `GITHUB_TOKEN` | No action needed | Provided automatically by Actions; the workflow uses it for the tag, release and comment. Only create a PAT if the org disables the default token |
+What the workflow already does:
 
-Create `NPM_TOKEN` at **npmjs.com → Access Tokens → Generate New Token** as a
-*Granular Access Token*:
+- `permissions: id-token: write` on the release job;
+- runs on a GitHub-hosted runner (`ubuntu-latest`);
+- runs Node 24, so `npm` is newer than the 11.5.1 trusted publishing requires,
+  and prints `node -v && npm -v` before publishing;
+- does **not** set `registry-url` on `setup-node`, which would write an `.npmrc`
+  auth token and break the OIDC exchange;
+- keeps `repository.url` in `package.json` equal to the GitHub repository, which
+  npm verifies.
 
-- Packages and scopes: **Read and write** (or scope it to `timeline-tasks`);
-- Organizations: none (the package is unscoped);
-- **Bypass two-factor authentication** enabled, otherwise the CI publish fails
-  with an OTP error.
+`GITHUB_TOKEN` is provided automatically: the workflow uses it for the tag, the
+GitHub release, the comments and the push back to `main`.
 
-A classic *Automation* token also works. Then add it as the `NPM_TOKEN`
-repository secret — never commit it.
+#### One-time setup
+
+npm can only attach a trusted publisher to a package that already exists, so the
+first version has to be published once from your machine:
+
+```bash
+pnpm login     # an account with 2FA enabled that will own timeline-tasks
+pnpm publish   # publishes 0.1.0; prepublishOnly runs typecheck + tests + build
+```
+
+Then register the workflow on npmjs.com:
+
+1. open `timeline-tasks` → **Settings → Trusted publishing** → **GitHub
+   Actions**;
+2. **Organization or user** `leosole`, **Repository** `timeline-tasks`,
+   **Workflow filename** `release.yml` (filename only, including `.yml`, exact
+   case), **Environment** empty;
+3. **Allowed actions**: enable **npm publish** (`npm stage publish` is always
+   allowed);
+4. save.
+
+A new configuration must complete its first successful publish within two days,
+so add it when a release is ready. After that, every push to `main` publishes
+from CI.
+
+Optional hardening, once the first OIDC publish has worked: **Settings →
+Publishing access → Require two-factor authentication and disallow tokens**. That
+only disables token-based publishing and leaves trusted publishers working;
+revoke any automation tokens you created earlier.
+
+If a release fails with `ENEEDAUTH`, the owner, repository or workflow filename
+does not match the configuration (or a stale token is still set); a `404`
+usually means the bootstrap publish has not happened yet.
 
 ### First run
 
-`main` must contain a `package.json` with the exact version you want to start
-from (`0.1.0`). semantic-release publishes the *next* version derived from
-commits, and commits such as `feat:` will produce `0.2.0` as the first release.
-If you want `0.1.0` itself on npm, publish it locally once
-(`pnpm login && pnpm publish`) before wiring the workflow — semantic-release
-then continues from there.
+semantic-release derives the next version from the commits since the last tag,
+not from `package.json`, so with this history the first CI release is a major
+(`1.0.0`) even though `package.json` says `0.1.0`. The bootstrap publish above
+puts `0.1.0` on the registry so the trusted publisher can be attached, and CI
+continues from there.
 
 To preview what the next release would be without publishing, run
 `pnpm release:dry-run` locally with `GITHUB_TOKEN` set and a git remote

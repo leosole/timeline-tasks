@@ -20,6 +20,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - semantic-release: pushes to `main` are versioned, changelogged and published
   to npm from `.github/workflows/release.yml`.
 
+### Changed
+
+- npm releases use [trusted publishing](https://docs.npmjs.com/trusted-publishers)
+  (OIDC) instead of an `NPM_TOKEN` secret: the release job grants
+  `id-token: write`, `setup-node` no longer sets a registry token, and provenance
+  is generated automatically. Requires `semantic-release` 25 with
+  `@semantic-release/npm` 13, `@semantic-release/changelog` 7 and
+  `@semantic-release/git` 11.
+
+- CI, release and Pages workflows run Node 24 and the current action majors
+  (`checkout@v7`, `setup-node@v7`, `pnpm/action-setup@v6`,
+  `configure-pages@v6`, `upload-pages-artifact@v5`, `deploy-pages@v5`).
+
 ### Fixed
 
 - The visible range now snaps to the selected granularity: whole weeks
