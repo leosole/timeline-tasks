@@ -52,8 +52,10 @@
     "access": "public"
   },
   "scripts": {
-    "dev": "tsup --watch --onSuccess \"node scripts/add-use-client.mjs && npm run build:css\"",
+    "dev": "vite",
+    "dev:build": "tsup --watch --onSuccess \"node scripts/add-use-client.mjs\"",
     "build": "npm run build:js && npm run build:css",
+    "build:demo": "vite build",
     "build:js": "tsup && node scripts/add-use-client.mjs",
     "build:css": "tailwindcss -i src/styles.css -o dist/task-timeline.css --minify",
     "typecheck": "tsc --noEmit",
@@ -77,13 +79,16 @@
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.11",
+    "@tailwindcss/vite": "^4.1.11",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwindcss": "^4.1.11",
     "tsup": "^8.3.5",
     "typescript": "^5.6.2",
+    "vite": "^5.4.10",
     "vitest": "^2.1.8"
   }
 }

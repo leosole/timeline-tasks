@@ -54,7 +54,7 @@ export const Legend: React.FC<LegendProps> = React.memo(
       {
         label: labels.legendToday,
         kind: "line" as const,
-        color: "var(--color-timeline-today, #4a90d9)",
+        color: "var(--tt-timeline-today, #4a90d9)",
       },
     ];
 

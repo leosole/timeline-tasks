@@ -369,7 +369,7 @@ export const Timeline: React.FC<TimelineProps> = ({
   return (
     <div
       className={cn(
-        "relative flex h-full min-h-0 w-full flex-col bg-background text-foreground",
+        "timeline-tasks relative flex h-full min-h-0 w-full flex-col bg-background text-foreground",
         className,
       )}
     >

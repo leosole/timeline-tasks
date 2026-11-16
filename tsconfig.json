@@ -15,6 +15,13 @@
     "declaration": true,
     "noEmit": true
   },
-  "include": ["src", "test", "tsup.config.ts", "vitest.config.ts"],
-  "exclude": ["dist", "node_modules"]
+  "include": [
+    "src",
+    "test",
+    "demo",
+    "tsup.config.ts",
+    "vitest.config.ts",
+    "vite.config.ts"
+  ],
+  "exclude": ["dist", "demo/dist", "node_modules"]
 }

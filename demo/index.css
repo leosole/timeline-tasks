@@ -1,0 +1,5 @@
+@import "../src/styles.css";
+
+/* Only the demo's own classes are scanned here; the published stylesheet is
+   built from src/styles.css alone. */
+@source "./**/*.{ts,tsx}";

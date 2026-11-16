@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `demo/` app served by `npm run dev`, exercising grouping, filters, the task
+  popover, editable status colors and dark mode.
+
+### Changed
+
+- The shipped stylesheet now defines its colors as `--tt-*` variables scoped to
+  the `.timeline-tasks` root element instead of global `--color-*` tokens, so
+  consumers need no Tailwind theme setup and the package cannot clash with an
+  app's theme.
+
 ## [0.1.0] - 2026-11-16
 
 ### Added

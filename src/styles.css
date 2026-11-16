@@ -5,32 +5,49 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-@theme {
-  --color-background: #ffffff;
-  --color-card: #f8f9fa;
-  --color-foreground: #1a1a1a;
-  --color-muted-foreground: #666666;
-  --color-muted: #f0f0f0;
-  --color-border: #e0e0e0;
-  --color-primary: #4a90d9;
-  --color-primary-hover: #417cbb;
-  --color-accent: #c0deff;
-  --color-secondary: #6c757d;
-  --color-timeline-doing: #eab308;
-  --color-timeline-done: #22c55e;
-  --color-timeline-overdue: #ef4444;
-  --color-timeline-not-started: #9ca3af;
-  --color-timeline-today: #4a90d9;
+/*
+  Map the package tokens to component-scoped variables.
+
+  `@theme inline` keeps the generated utilities pointing at `--tt-*` instead of
+  emitting global `--color-*` declarations, so:
+  - consumers never define tokens (the defaults live on `.timeline-tasks`);
+  - the host app's Tailwind theme cannot change the timeline's colors;
+  - the timeline cannot change the host app's colors.
+  Override any `--tt-*` variable on `.timeline-tasks` to recolor the component.
+*/
+@theme inline {
+  --color-background: var(--tt-background);
+  --color-card: var(--tt-card);
+  --color-foreground: var(--tt-foreground);
+  --color-muted-foreground: var(--tt-muted-foreground);
+  --color-muted: var(--tt-muted);
+  --color-border: var(--tt-border);
+  --color-primary: var(--tt-primary);
+  --color-primary-hover: var(--tt-primary-hover);
+  --color-secondary: var(--tt-secondary);
+  --color-timeline-today: var(--tt-timeline-today);
 }
 
-/* Dark theme tokens. Add the `dark` class to an ancestor to enable them. */
-.dark {
-  --color-background: #1a1a1a;
-  --color-card: #2d2d2d;
-  --color-foreground: #e5e5e5;
-  --color-muted-foreground: #999999;
-  --color-accent: #123d6b;
-  --color-muted: #333333;
-  --color-border: #404040;
+.timeline-tasks {
+  --tt-background: #ffffff;
+  --tt-card: #f8f9fa;
+  --tt-foreground: #1a1a1a;
+  --tt-muted-foreground: #666666;
+  --tt-muted: #f0f0f0;
+  --tt-border: #e0e0e0;
+  --tt-primary: #4a90d9;
+  --tt-primary-hover: #417cbb;
+  --tt-secondary: #6c757d;
+  --tt-timeline-today: #4a90d9;
+}
+
+/* Dark defaults. Add the `dark` class to an ancestor to enable them. */
+.dark .timeline-tasks {
+  --tt-background: #1a1a1a;
+  --tt-card: #2d2d2d;
+  --tt-foreground: #e5e5e5;
+  --tt-muted-foreground: #999999;
+  --tt-muted: #333333;
+  --tt-border: #404040;
   color-scheme: light dark;
 }

@@ -131,59 +131,60 @@ overdue/delay overlays still apply.
 
 ## Styling
 
-### Precompiled stylesheet (default)
+### One import, no configuration
 
 ```ts
 import "timeline-tasks/styles.css";
 ```
 
-This ships every utility class the component needs plus the theme tokens. It
-contains **no Tailwind preflight**, so it will not reset your app's styles, but
-the utility class names (`flex`, `border-border`, ...) live in the global
-namespace. Do not also load a second Tailwind build that could conflict.
+That is the whole setup. **No Tailwind installation and no token definitions
+are required** — whether or not your app uses Tailwind.
 
-### Tailwind v4 apps
+The stylesheet bundles the utility classes the component uses and defines every
+color it needs on the `.timeline-tasks` root element. Those variables are
+namespaced with `--tt-`, so your theme cannot change the timeline's colors and
+the timeline cannot change yours. It has no Tailwind preflight either, so it
+never resets your app's styles.
 
-If you already run Tailwind v4, you can skip the stylesheet and define the
-tokens yourself:
+### Changing colors (optional)
+
+Override any variable on `.timeline-tasks`, in your own stylesheet:
 
 ```css
-@import "tailwindcss";
-
-@custom-variant dark (&:where(.dark, .dark *));
-
-@theme {
-  --color-background: #ffffff;
-  --color-card: #f8f9fa;
-  --color-foreground: #1a1a1a;
-  --color-muted-foreground: #666666;
-  --color-muted: #f0f0f0;
-  --color-border: #e0e0e0;
-  --color-primary: #4a90d9;
-  --color-primary-hover: #417cbb;
-  --color-accent: #c0deff;
-  --color-secondary: #6c757d;
-  --color-timeline-doing: #eab308;
-  --color-timeline-done: #22c55e;
-  --color-timeline-overdue: #ef4444;
-  --color-timeline-not-started: #9ca3af;
-  --color-timeline-today: #4a90d9;
+.timeline-tasks {
+  --tt-primary: #6366f1;
+  --tt-timeline-today: #6366f1;
+  --tt-border: #e5e7eb;
 }
 ```
 
-Then add the package to your Tailwind content sources, e.g.
-`@source "../node_modules/timeline-tasks/dist";`.
+| Variable | Used for | Default (light) | Default (dark) |
+| --- | --- | --- | --- |
+| `--tt-background` | component background, row background | `#ffffff` | `#1a1a1a` |
+| `--tt-card` | title bar and controls bar | `#f8f9fa` | `#2d2d2d` |
+| `--tt-foreground` | text | `#1a1a1a` | `#e5e5e5` |
+| `--tt-muted-foreground` | secondary text | `#666666` | `#999999` |
+| `--tt-muted` | grid headers, footer, hover | `#f0f0f0` | `#333333` |
+| `--tt-border` | borders and grid lines | `#e0e0e0` | `#404040` |
+| `--tt-primary` | active toggle, filter pills, today button | `#4a90d9` | `#4a90d9` |
+| `--tt-primary-hover` | today button hover | `#417cbb` | `#417cbb` |
+| `--tt-secondary` | hover crosshair | `#6c757d` | `#6c757d` |
+| `--tt-timeline-today` | today line and day badge | `#4a90d9` | `#4a90d9` |
+
+Status colors are not CSS variables: pass `statusColors`, or let users pick them
+in the legend (`onStatusColorsChange` reports the result).
 
 ### Dark mode
 
-Add the `dark` class to any ancestor (`<html class="dark">`) and the shipped
-stylesheet switches the token values. Override the tokens to match your theme:
+Add the `dark` class to any ancestor (`<html class="dark">`) and the defaults
+switch automatically. To use your own dark palette, override the `--tt-*`
+variables in the dark scope:
 
 ```css
-.dark {
-  --color-background: #101014;
-  --color-card: #16161c;
-  --color-timeline-today: #60a5fa;
+.dark .timeline-tasks {
+  --tt-background: #101014;
+  --tt-card: #16161c;
+  --tt-timeline-today: #60a5fa;
 }
 ```
 
@@ -260,12 +261,19 @@ import {
 
 ```bash
 npm install
-npm run dev        # rebuild JS on change and the stylesheet after each build
+npm run dev        # demo app with hot reload → http://localhost:5173
+npm run build:demo # static build of the demo (demo/dist)
+npm run dev:build  # rebuild the package dist on change
 npm run typecheck
 npm test
 npm run build      # dist/index.js, dist/index.cjs, dist/index.d.ts, dist/task-timeline.css
 npm run pack:check # npm pack --dry-run, inspect what would be published
 ```
+
+`npm run dev` serves the demo app in `demo/` — sample grouped tasks, filters,
+the task popover, editable status colors and a dark-mode toggle — running
+against `src/` directly, so component edits hot reload. The demo is not part of
+the published package.
 
 Tests cover the date helpers and bar geometry; the component itself has no DOM
 test suite.
