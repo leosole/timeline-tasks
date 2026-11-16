@@ -1,3 +1,29 @@
+# 1.0.0 (2026-11-16)
+
+
+* feat(api)!: make the timeline headless and fix task bar rendering ([4697443](https://github.com/leosole/timeline-tasks/commit/4697443389164ca417dc35880e3f4a3fa054c4fb))
+
+
+### Bug Fixes
+
+* snap the visible range to the selected granularity ([93cd285](https://github.com/leosole/timeline-tasks/commit/93cd2851d09c477cc0183068743daf63fcc065c3))
+
+
+### Features
+
+* add demo app and scope theme colors to the component ([690afb6](https://github.com/leosole/timeline-tasks/commit/690afb6c9cbf2f3526788f4144f029c5b0d32fa6))
+* extract the timeline component into a publishable package ([29379c1](https://github.com/leosole/timeline-tasks/commit/29379c11c46d81569cd9c1fef7d0cce2838f453f))
+
+
+### BREAKING CHANGES
+
+* Timeline no longer accepts title, updatedAt, sourceUrl or
+filterFields and renders no toolbar. filter, granularity, statusFilter and
+extraFieldFilters are passed in, normally from useTimeline().
+
+🤖 Generated with Codebuff
+Co-Authored-By: Codebuff <noreply@codebuff.com>
+
 # Changelog
 
 All notable changes to this project are documented in this file.
