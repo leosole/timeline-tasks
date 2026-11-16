@@ -1,6 +1,6 @@
 {
   "name": "timeline-tasks",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "React timeline component for project tasks: task bars, due dates, overdue/delay overlays, grouping, filters and status colors.",
   "license": "MIT",
   "author": "leosole",

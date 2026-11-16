@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/leosole/timeline-tasks/compare/v1.0.0...v1.1.0) (2026-11-16)
+
+
+### Features
+
+* add support for custom components in the timeline ([f90770a](https://github.com/leosole/timeline-tasks/commit/f90770a69bc58c7daf60833129e6494d876aafe9))
+
 # 1.0.0 (2026-11-16)
 
 
