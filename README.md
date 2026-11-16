@@ -8,6 +8,8 @@ detail popover.
 Extracted from a Google Sheets timeline app, but it has no knowledge of Google
 Sheets — you pass plain task objects.
 
+**Live demo:** https://leosole.github.io/timeline-tasks/
+
 <!-- prettier-ignore -->
 | Feature | Notes |
 | --- | --- |
@@ -432,7 +434,7 @@ component itself has no DOM test suite.
 `pnpm build:pages` builds the demo for GitHub Pages and
 `.github/workflows/pages.yml` deploys it on every push to `main`:
 
-- demo: `https://<owner>.github.io/timeline-tasks/`
+- demo: https://leosole.github.io/timeline-tasks/
 
 Enable Pages once in the repository: **Settings → Pages → Build and deployment
 → Source: GitHub Actions**. The `build:pages` script passes
