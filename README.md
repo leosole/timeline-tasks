@@ -21,7 +21,7 @@ Sheets — you pass plain task objects.
 | Filtering | filter state and helpers; you render the controls |
 | Colors | built-in status colors, editable in the legend, or pass your own |
 | Theming | light/dark via CSS custom properties |
-| i18n | `locale` prop and overridable labels (defaults in pt-BR) |
+| i18n | `locale` prop and overridable labels |
 
 ## Install
 
