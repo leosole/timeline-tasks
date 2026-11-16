@@ -280,31 +280,56 @@ test suite.
 
 ## Publishing
 
-The published name is `timeline-tasks`. First time:
+Releases are automated with [semantic-release](https://semantic-release.gitbook.io/).
+Pushing a conventional commit to `main` makes
+`.github/workflows/release.yml` run the typecheck, the tests and the build, then:
 
-```bash
-npm login
-npm publish --dry-run   # optional: inspect the tarball
-npm publish
-```
+1. work out the next version from the commits since the last tag
+   (`fix:` → patch, `feat:` → minor, `BREAKING CHANGE:` → major, other types → no release);
+2. prepend the release notes to `CHANGELOG.md` and bump `package.json`;
+3. publish to npm;
+4. create the git tag and GitHub release;
+5. commit the version and changelog back to `main` with `[skip ci]`.
 
-After the repository exists and a remote is configured:
+The published name is `timeline-tasks`. Nothing is published manually, and a
+commit that does not match the convention (e.g. `docs:`, `chore:`) does not
+release.
 
-```bash
-git remote add origin git@github.com:<you>/timeline-tasks.git
-git push -u origin main
-```
+### Required secrets
 
-For later releases, use the bump scripts, which tag the commit, push it and
-publish:
+Add these under **Settings → Secrets and variables → Actions** in the GitHub
+repository:
 
-```bash
-npm run release:patch
-npm run release:minor
-npm run release:major
-```
+| Secret | Required | What it is |
+| --- | --- | --- |
+| `NPM_TOKEN` | Yes | npm access token that may publish `timeline-tasks` |
+| `GITHUB_TOKEN` | No action needed | Provided automatically by Actions; the workflow uses it for the tag, release and comment. Only create a PAT if the org disables the default token |
 
-`prepublishOnly` runs the typecheck, the tests and the build before every
+Create `NPM_TOKEN` at **npmjs.com → Access Tokens → Generate New Token** as a
+*Granular Access Token*:
+
+- Packages and scopes: **Read and write** (or scope it to `timeline-tasks`);
+- Organizations: none (the package is unscoped);
+- **Bypass two-factor authentication** enabled, otherwise the CI publish fails
+  with an OTP error.
+
+A classic *Automation* token also works. Then add it as the `NPM_TOKEN`
+repository secret — never commit it.
+
+### First run
+
+`main` must contain a `package.json` with the exact version you want to start
+from (`0.1.0`). semantic-release publishes the *next* version derived from
+commits, and commits such as `feat:` will produce `0.2.0` as the first release.
+If you want `0.1.0` itself on npm, publish it locally once
+(`npm login && npm publish`) before wiring the workflow — semantic-release then
+continues from there.
+
+To preview what the next release would be without publishing, run
+`npm run release:dry-run` locally with `GITHUB_TOKEN` set and a git remote
+configured.
+
+`prepublishOnly` still runs the typecheck, the tests and the build before every
 publish, so a broken build never reaches the registry. `npm publish` also skips
 anything outside `files` (`dist` plus the docs), so sources, tests and
 `node_modules` are never uploaded.

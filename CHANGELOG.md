@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- semantic-release: pushes to `main` are versioned, changelogged and published
+  to npm from `.github/workflows/release.yml`.
+
 - `demo/` app served by `npm run dev`, exercising grouping, filters, the task
   popover, editable status colors and dark mode.
 
