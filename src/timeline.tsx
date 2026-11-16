@@ -1,21 +1,14 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
 import { BiCollapseVertical, BiExpandVertical } from "react-icons/bi";
-import { FaExternalLinkAlt } from "react-icons/fa";
-import { PiCaretDownBold, PiClock } from "react-icons/pi";
+import { PiCaretDownBold } from "react-icons/pi";
 import { cn } from "./lib/cn";
-import { Controls } from "./controls";
 import { Legend } from "./legend";
 import { TaskBar } from "./task-bar";
 import { TaskPopover } from "./task-popover";
 import { TimelineHeader } from "./timeline-header";
 import { resolveLabels } from "./labels";
+import { getStatusOptions, matchesTimelineFilters } from "./lib/filtering";
 import type { TimelineProps, TimelineTask } from "./types";
 import {
   calculateDateRange,
@@ -23,40 +16,31 @@ import {
   generateTimelineData,
   getCurrentDatePosition,
   getDaySize,
-  type Granularity,
 } from "./lib/date-utils";
 import { calculateBarMetrics, type BarMetrics } from "./lib/bar-metrics";
-import { getTaskStatuses } from "./lib/status";
 
 const ROW_HEIGHT = 40;
 const SIDEBAR_WIDTH = 288;
 const HEADER_HEIGHT = 64;
-const CORE_FIELDS = new Set(["name", "start", "end", "due", "status"]);
 
 export const Timeline: React.FC<TimelineProps> = ({
   tasks,
-  title = "Timeline",
-  updatedAt,
-  sourceUrl,
-  filterFields = [],
-  popupFields = [],
+  filter = "",
+  granularity = "week",
+  statusFilter = [],
+  extraFieldFilters = {},
   statusField,
+  popupFields = [],
   locale = DEFAULT_LOCALE,
   labels: labelOverrides,
   statusColors: initialStatusColors,
   onStatusColorsChange,
+  scrollRef,
   className,
 }) => {
   const labels = useMemo(() => resolveLabels(labelOverrides), [labelOverrides]);
 
-  const [filter, setFilter] = useState("");
-  const [granularity, setGranularity] = useState<Granularity>("week");
-  const [showCurrentDateBtn, setShowCurrentDateBtn] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TimelineTask | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [extraFieldFilters, setExtraFieldFilters] = useState<
-    Record<string, string>
-  >({});
   const [statusColors, setStatusColors] = useState<Record<string, string>>(
     () => ({ ...initialStatusColors }),
   );
@@ -64,14 +48,13 @@ export const Timeline: React.FC<TimelineProps> = ({
     () => new Set(),
   );
 
-  const mouseCursorRef = useRef<HTMLDivElement>(null);
-  const timelineScrollRef = useRef<HTMLDivElement>(null);
-  const rafRef = useRef<number>(0);
+  const internalScrollRef = useRef<HTMLDivElement>(null);
+  const resolvedScrollRef = scrollRef ?? internalScrollRef;
 
-  const dateRange = useMemo(() => calculateDateRange(tasks), [tasks]);
   const timelineData = useMemo(
-    () => generateTimelineData(dateRange, granularity, locale),
-    [dateRange, granularity, locale],
+    () =>
+      generateTimelineData(calculateDateRange(tasks), granularity, locale),
+    [tasks, granularity, locale],
   );
   const currentDatePx = useMemo(
     () => getCurrentDatePosition(timelineData),
@@ -82,31 +65,10 @@ export const Timeline: React.FC<TimelineProps> = ({
     currentDatePx <= timelineData.totalDays * timelineData.daySize;
   const daySize = getDaySize(granularity);
 
-  // Filter options from the configured fields, excluding the core ones.
-  const filterOptions = useMemo(() => {
-    const options: Record<string, string[]> = {};
-    if (!filterFields.length) return options;
-    filterFields.forEach((field) => {
-      if (CORE_FIELDS.has(field.toLowerCase())) return;
-      options[field] = [
-        ...new Set(tasks.map((task) => String(task[field] ?? "")).filter(Boolean)),
-      ].sort();
-    });
-    return options;
-  }, [tasks, filterFields]);
-
-  const statusOptions = useMemo(() => {
-    const values = new Set<string>();
-    if (statusField) {
-      tasks.forEach((task) => {
-        const value = task[statusField];
-        if (value !== undefined && value !== null && String(value).trim()) {
-          values.add(String(value).trim());
-        }
-      });
-    }
-    return Array.from(values).sort();
-  }, [tasks, statusField]);
+  const statusOptions = useMemo(
+    () => getStatusOptions(tasks, statusField),
+    [tasks, statusField],
+  );
 
   // Give custom statuses a starting color so bars are distinguishable.
   useEffect(() => {
@@ -135,40 +97,14 @@ export const Timeline: React.FC<TimelineProps> = ({
     [statusColors, onStatusColorsChange],
   );
 
-  const handleExtraFieldFilter = (field: string, value: string) => {
-    setExtraFieldFilters((previous) => {
-      const next = { ...previous };
-      if (value) next[field] = value;
-      else delete next[field];
-      return next;
-    });
-  };
-
-  const getTaskStatusMatches = useCallback(
-    (task: TimelineTask): string[] => getTaskStatuses(task, statusField),
-    [statusField],
+  const filterState = useMemo(
+    () => ({ filter, statusFilter, extraFieldFilters, statusField }),
+    [filter, statusFilter, extraFieldFilters, statusField],
   );
 
   const taskMatchesFilters = useCallback(
-    (task: TimelineTask): boolean => {
-      if (
-        statusFilter.length > 0 &&
-        !statusFilter.some((status) =>
-          getTaskStatusMatches(task).includes(status),
-        )
-      ) {
-        return false;
-      }
-
-      for (const [field, value] of Object.entries(extraFieldFilters)) {
-        if (String(task[field] ?? "") !== value) return false;
-      }
-
-      return String(task.name ?? "")
-        .toLowerCase()
-        .includes(filter.toLowerCase());
-    },
-    [statusFilter, extraFieldFilters, filter, getTaskStatusMatches],
+    (task: TimelineTask): boolean => matchesTimelineFilters(task, filterState),
+    [filterState],
   );
 
   const groupedParentRows = useMemo(() => {
@@ -214,25 +150,22 @@ export const Timeline: React.FC<TimelineProps> = ({
     setCollapsedParents(initialCollapsedParents);
   }, [hasGroupedRows, initialCollapsedKey]);
 
-  const hasActiveFilters =
+  const filtersActive =
     statusFilter.length > 0 ||
     Object.keys(extraFieldFilters).length > 0 ||
     filter.trim().length > 0;
 
   const matchingChildParentRows = useMemo(
     () =>
-      hasGroupedRows && hasActiveFilters
+      hasGroupedRows && filtersActive
         ? tasks.reduce((rows: Set<number>, task) => {
-            if (
-              typeof task.parentRow === "number" &&
-              taskMatchesFilters(task)
-            ) {
+            if (typeof task.parentRow === "number" && taskMatchesFilters(task)) {
               rows.add(task.parentRow);
             }
             return rows;
           }, new Set<number>())
         : new Set<number>(),
-    [hasGroupedRows, hasActiveFilters, tasks, taskMatchesFilters],
+    [hasGroupedRows, filtersActive, tasks, taskMatchesFilters],
   );
 
   const effectiveCollapsedParents = useMemo(() => {
@@ -302,70 +235,6 @@ export const Timeline: React.FC<TimelineProps> = ({
     return cache;
   }, [displayedTasks, timelineData, granularity, statusField, statusColors]);
 
-  // Center the current day on mount and whenever the granularity changes.
-  useEffect(() => {
-    if (isCurrentDateVisible && timelineScrollRef.current) {
-      const container = timelineScrollRef.current;
-      container.scrollLeft = Math.max(
-        0,
-        currentDatePx - container.clientWidth / 2,
-      );
-    }
-  }, [granularity]);
-
-  const scrollToToday = useCallback(() => {
-    if (timelineScrollRef.current && isCurrentDateVisible) {
-      const container = timelineScrollRef.current;
-      container.scrollTo({
-        left: Math.max(0, currentDatePx - container.clientWidth / 2),
-        behavior: "smooth",
-      });
-    }
-  }, [currentDatePx, isCurrentDateVisible]);
-
-  useEffect(() => {
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, []);
-
-  const handleScroll = useCallback(() => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = requestAnimationFrame(() => {
-      const container = timelineScrollRef.current;
-      if (!container) return;
-      if (isCurrentDateVisible) {
-        const visibleLeft = currentDatePx - timelineData.daySize * 2;
-        const visibleRight = currentDatePx + timelineData.daySize * 2;
-        setShowCurrentDateBtn(
-          !(
-            container.scrollLeft <= visibleLeft &&
-            container.scrollLeft + container.clientWidth >= visibleRight
-          ),
-        );
-      } else {
-        setShowCurrentDateBtn(false);
-      }
-    });
-  }, [currentDatePx, isCurrentDateVisible, timelineData.daySize]);
-
-  const handleMouseMove = useCallback(
-    (event: React.MouseEvent<HTMLDivElement>) => {
-      const rect = event.currentTarget.getBoundingClientRect();
-      if (mouseCursorRef.current) {
-        mouseCursorRef.current.style.left = `${event.clientX - rect.left}px`;
-        mouseCursorRef.current.style.display = "";
-      }
-    },
-    [],
-  );
-
-  const handleMouseLeave = useCallback(() => {
-    if (mouseCursorRef.current) {
-      mouseCursorRef.current.style.display = "none";
-    }
-  }, []);
-
   return (
     <div
       className={cn(
@@ -373,49 +242,7 @@ export const Timeline: React.FC<TimelineProps> = ({
         className,
       )}
     >
-      <header className="shrink-0 bg-card border-b border-border px-4 py-3 flex items-center justify-between">
-        <div>
-          {sourceUrl ? (
-            <a
-              href={sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xl font-bold hover:underline flex items-center align-middle gap-2"
-            >
-              {title} <FaExternalLinkAlt size={12} />
-            </a>
-          ) : (
-            <h1 className="text-xl font-bold">{title}</h1>
-          )}
-          {updatedAt ? (
-            <p className="text-xs text-muted-foreground mt-1 flex gap-1 items-center align-middle">
-              <PiClock size={12} /> {updatedAt}
-            </p>
-          ) : null}
-        </div>
-      </header>
-
-      <Controls
-        filter={filter}
-        onFilterChange={setFilter}
-        granularity={granularity}
-        onGranularityChange={setGranularity}
-        scrollToToday={scrollToToday}
-        showCurrentDateBtn={showCurrentDateBtn}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        extraFieldFilters={extraFieldFilters}
-        onExtraFieldFilterChange={handleExtraFieldFilter}
-        filterOptions={filterOptions}
-        statusOptions={statusOptions}
-        labels={labels}
-      />
-
-      <div
-        ref={timelineScrollRef}
-        className="relative min-h-0 flex-1 overflow-auto"
-        onScroll={handleScroll}
-      >
+      <div ref={resolvedScrollRef} className="relative min-h-0 flex-1 overflow-auto">
         {/*
           CSS Grid frozen-pane layout:
           - [0,0] Sidebar header: sticky top+left (frozen corner)
@@ -461,11 +288,7 @@ export const Timeline: React.FC<TimelineProps> = ({
           </div>
 
           {/* ── [0,1] Timeline header — sticks to top ─────────────── */}
-          <div
-            className="sticky top-0 z-40 bg-muted border-b border-border"
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
-          >
+          <div className="sticky top-0 z-40 bg-muted border-b border-border">
             <TimelineHeader
               timelineData={timelineData}
               granularity={granularity}
@@ -487,8 +310,7 @@ export const Timeline: React.FC<TimelineProps> = ({
           {/* ── [1,0] Sidebar body — sticks to left ───────────────── */}
           <div className="sticky left-0 z-30 border-r border-border bg-background overflow-hidden">
             {displayedTasks.map((task, index) => {
-              const rowNumber =
-                typeof task.row === "number" ? task.row : -1;
+              const rowNumber = typeof task.row === "number" ? task.row : -1;
               const isChild = typeof task.parentRow === "number";
               const hasChildren =
                 rowNumber >= 0 && groupedParentRows.has(rowNumber);
@@ -516,9 +338,7 @@ export const Timeline: React.FC<TimelineProps> = ({
                           });
                         }}
                         aria-label={
-                          isCollapsed
-                            ? labels.expandGroup
-                            : labels.collapseGroup
+                          isCollapsed ? labels.expandGroup : labels.collapseGroup
                         }
                       >
                         <PiCaretDownBold
@@ -546,11 +366,7 @@ export const Timeline: React.FC<TimelineProps> = ({
           </div>
 
           {/* ── [1,1] Timeline body — scrolls freely ──────────────── */}
-          <div
-            className="relative"
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
-          >
+          <div className="relative">
             {displayedTasks.map((task, index) => (
               <div
                 key={task.row ?? `bar-${index}`}
@@ -578,29 +394,17 @@ export const Timeline: React.FC<TimelineProps> = ({
                 }}
               />
             )}
-
-            <div
-              ref={mouseCursorRef}
-              className="absolute z-0 w-px bg-secondary pointer-events-none"
-              style={{
-                display: "none",
-                top: 0,
-                height: `${Math.max(displayedTasks.length * ROW_HEIGHT, 24)}px`,
-              }}
-            />
           </div>
         </div>
       </div>
 
-      <div className="sticky bottom-0 z-40 bg-muted">
-        <Legend
-          labels={labels}
-          statusOptions={statusOptions}
-          statusColors={statusColors}
-          hasCustomStatusField={Boolean(statusField)}
-          onColorChange={handleStatusColorChange}
-        />
-      </div>
+      <Legend
+        labels={labels}
+        statusOptions={statusOptions}
+        statusColors={statusColors}
+        hasCustomStatusField={Boolean(statusField)}
+        onColorChange={handleStatusColorChange}
+      />
 
       {selectedTask && (
         <TaskPopover

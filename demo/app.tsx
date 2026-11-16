@@ -1,10 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
-import { Timeline, type TimelineTask } from "../src";
+import { Timeline, useTimeline, type Granularity } from "../src";
 
 const day = (offset: number) => dayjs().add(offset, "day").format("YYYY-MM-DD");
 
-const buildTasks = (): TimelineTask[] => [
+const GRANULARITIES: Array<{ value: Granularity; label: string }> = [
+  { value: "day", label: "Dia" },
+  { value: "week", label: "Semana" },
+  { value: "month", label: "Mês" },
+];
+
+const buildTasks = () => [
   {
     name: "Phase 1 · Discovery",
     row: 2,
@@ -80,9 +86,19 @@ const buildTasks = (): TimelineTask[] => [
   },
 ];
 
+const controlClass =
+  "cursor-pointer rounded-md border border-neutral-300 px-2.5 py-1 text-xs font-medium hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800";
+const activeControlClass =
+  "cursor-pointer rounded-md border border-neutral-900 bg-neutral-900 px-2.5 py-1 text-xs font-medium text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900";
+
 export function DemoApp() {
   const tasks = useMemo(buildTasks, []);
   const [dark, setDark] = useState(false);
+  const timeline = useTimeline({
+    tasks,
+    statusField: "status",
+    filterFields: ["owner"],
+  });
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
@@ -90,30 +106,109 @@ export function DemoApp() {
 
   return (
     <div className="flex h-screen flex-col bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-      <div className="flex items-center justify-between gap-4 border-b border-neutral-200 px-4 py-2 dark:border-neutral-800">
-        <div className="text-sm">
-          <span className="font-semibold">timeline-tasks</span>
-          <span className="text-neutral-500 dark:text-neutral-400">
-            {" · demo — click a bar for details, edit status colors in the legend"}
-          </span>
+      {/* This whole header/toolbar is demo code: the package exports the state
+          and actions (useTimeline), not the controls. */}
+      <header className="flex items-start justify-between gap-4 border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
+        <div>
+          <h1 className="text-xl font-bold">Q4 Roadmap</h1>
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+            Demo data · {new Date().toLocaleString("pt-BR")}
+          </p>
         </div>
         <button
           type="button"
           onClick={() => setDark((value) => !value)}
-          className="cursor-pointer rounded-md border border-neutral-300 px-3 py-1 text-xs font-medium hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
+          className={controlClass}
         >
           {dark ? "Light mode" : "Dark mode"}
         </button>
+      </header>
+
+      <div className="flex flex-wrap items-center gap-3 border-b border-neutral-200 px-4 py-2 dark:border-neutral-800">
+        <input
+          value={timeline.filter}
+          onChange={(event) => timeline.setFilter(event.target.value)}
+          placeholder="Filtrar tarefas..."
+          className="w-48 rounded-md border border-neutral-300 bg-transparent px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:border-neutral-700"
+        />
+
+        {timeline.statusOptions.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {timeline.statusOptions.map((status) => {
+              const selected = timeline.statusFilter.includes(status);
+              return (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => timeline.toggleStatus(status)}
+                  className={selected ? activeControlClass : controlClass}
+                >
+                  {selected ? "✓ " : ""}
+                  {status}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {Object.entries(timeline.filterOptions).map(([field, values]) => (
+          <select
+            key={field}
+            value={timeline.extraFieldFilters[field] ?? ""}
+            onChange={(event) =>
+              timeline.setExtraFieldFilter(field, event.target.value)
+            }
+            className="cursor-pointer rounded-md border border-neutral-300 bg-transparent px-2 py-1 text-xs dark:border-neutral-700"
+          >
+            <option value="">{field}</option>
+            {values.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        ))}
+
+        <div className="ml-auto flex items-center gap-1.5">
+          {GRANULARITIES.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => timeline.setGranularity(option.value)}
+              className={
+                timeline.granularity === option.value
+                  ? activeControlClass
+                  : controlClass
+              }
+            >
+              {option.label}
+            </button>
+          ))}
+
+          {timeline.showScrollToToday && (
+            <button
+              type="button"
+              onClick={timeline.scrollToToday}
+              className={
+                "cursor-pointer rounded-md bg-neutral-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-neutral-700 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
+              }
+            >
+              Hoje
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="min-h-0 flex-1">
         <Timeline
           tasks={tasks}
-          title="Q4 Roadmap"
-          updatedAt={`Demo data · ${new Date().toLocaleString("pt-BR")}`}
-          filterFields={["owner", "status"]}
-          popupFields={["owner", "notes"]}
+          filter={timeline.filter}
+          granularity={timeline.granularity}
+          statusFilter={timeline.statusFilter}
+          extraFieldFilters={timeline.extraFieldFilters}
           statusField="status"
+          popupFields={["owner", "notes"]}
+          scrollRef={timeline.scrollRef}
         />
       </div>
     </div>

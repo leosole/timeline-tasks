@@ -9,8 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `useTimeline()` hook exporting the timeline state and actions (`filter`,
+  `granularity`, status and field filters, `scrollToToday`, scroll visibility,
+  `timelineData`), plus `getFilterOptions`, `getStatusOptions`,
+  `matchesTimelineFilters` and `hasActiveFilters`.
+
 - semantic-release: pushes to `main` are versioned, changelogged and published
   to npm from `.github/workflows/release.yml`.
+
+### Fixed
+
+- Task bars rendered as a smaller colored block inside the browser's native
+  button chrome (UA padding/border, and borders were invisible without
+  Tailwind's preflight). The bar is now a single element; a minimal reset
+  scoped to `.timeline-tasks` restores `box-sizing`, solid borders and bare
+  buttons.
+
+### Removed
+
+- The component's title bar, search box, filter pills, zoom toggle and "today"
+  button (`Controls` and the internal `ui/` primitives, and the `title`,
+  `updatedAt`, `sourceUrl`, `filterFields` props). Build these with
+  `useTimeline()`; `Labels` no longer carries toolbar strings.
 
 - `demo/` app served by `npm run dev`, exercising grouping, filters, the task
   popover, editable status colors and dark mode.

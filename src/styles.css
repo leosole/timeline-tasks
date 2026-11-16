@@ -1,3 +1,5 @@
+@layer theme, base, components, utilities;
+
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
 
@@ -39,6 +41,37 @@
   --tt-primary-hover: #417cbb;
   --tt-secondary: #6c757d;
   --tt-timeline-today: #4a90d9;
+}
+
+/*
+  Minimal reset, scoped to the component.
+
+  Tailwind's preflight is not shipped, but its essentials are still needed:
+  `box-sizing: border-box`, `border-style: solid` with zero width (so `border`
+  utilities become visible) and buttons stripped of the browser's native
+  padding, border and background — otherwise task bars render as a colored
+  block inside the native button chrome. It lives in the `base` layer so
+  utilities still win.
+*/
+@layer base {
+  .timeline-tasks,
+  .timeline-tasks *,
+  .timeline-tasks *::before,
+  .timeline-tasks *::after {
+    box-sizing: border-box;
+    border-width: 0;
+    border-style: solid;
+  }
+
+  .timeline-tasks button {
+    padding: 0;
+    background-color: transparent;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
+    text-align: inherit;
+  }
 }
 
 /* Dark defaults. Add the `dark` class to an ancestor to enable them. */

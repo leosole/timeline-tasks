@@ -141,5 +141,8 @@ describe("calculateBarMetrics", () => {
       { Blocked: "#123456" },
     );
     expect(custom?.customColors?.bg).toBe("#123456");
+    expect(custom?.customColors?.darkBorder).toBe(
+      "color-mix(in oklab, #123456 80%, black 20%)",
+    );
   });
 });

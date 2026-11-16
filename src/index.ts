@@ -1,7 +1,17 @@
 export { Timeline } from "./timeline";
 export type { TimelineProps, TimelineTask } from "./types";
 
-export { Controls } from "./controls";
+export { useTimeline } from "./use-timeline";
+export type { TimelineController, UseTimelineOptions } from "./use-timeline";
+
+export {
+  getFilterOptions,
+  getStatusOptions,
+  hasActiveFilters,
+  matchesTimelineFilters,
+} from "./lib/filtering";
+export type { TimelineFilterState } from "./lib/filtering";
+
 export { Legend } from "./legend";
 export { TaskBar } from "./task-bar";
 export { TaskPopover } from "./task-popover";

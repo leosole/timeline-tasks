@@ -16,7 +16,7 @@ Sheets — you pass plain task objects.
 | Overlays | overdue stripes, delay stripes, "completed before due" marker |
 | Today | current-day line, day badge and scroll-to-today button |
 | Grouping | mark rows as group parents, collapse/expand per group or all |
-| Filtering | text search, status pills, per-field dropdowns |
+| Filtering | filter state and helpers; you render the controls |
 | Colors | built-in status colors, editable in the legend, or pass your own |
 | Theming | light/dark via CSS custom properties |
 | i18n | `locale` prop and overridable labels (defaults in pt-BR) |
@@ -54,23 +54,47 @@ const tasks: TimelineTask[] = [
 ];
 
 export function Roadmap() {
+  const timeline = useTimeline({
+    tasks,
+    statusField: "status",
+    filterFields: ["owner"],
+  });
+
   return (
-    <div style={{ height: "100vh" }}>
-      <Timeline
-        tasks={tasks}
-        title="Roadmap"
-        updatedAt="Synced 16/11/2026 10:22"
-        filterFields={["owner"]}
-        popupFields={["owner"]}
-        statusField="status"
-      />
+    <div style={{ height: "100vh" }} className="flex flex-col">
+      {/* Your own toolbar — see "Bring your own controls" below. */}
+      <div className="flex gap-2 p-2">
+        <input
+          value={timeline.filter}
+          onChange={(event) => timeline.setFilter(event.target.value)}
+          placeholder="Filter tasks..."
+        />
+        <button onClick={() => timeline.setGranularity("month")}>Month</button>
+      </div>
+
+      <div className="min-h-0 flex-1">
+        <Timeline
+          tasks={tasks}
+          filter={timeline.filter}
+          granularity={timeline.granularity}
+          statusFilter={timeline.statusFilter}
+          extraFieldFilters={timeline.extraFieldFilters}
+          statusField="status"
+          popupFields={["owner"]}
+          scrollRef={timeline.scrollRef}
+        />
+      </div>
     </div>
   );
 }
 ```
 
-The timeline fills its container (`h-full`), so the parent needs an explicit
-height. It manages its own scrolling.
+The timeline renders no title bar and no toolbar: `Timeline` is the grid, the
+legend and the task popover, while `useTimeline()` supplies the state and
+actions for controls you build yourself.
+
+It fills its container (`h-full`), so the parent needs an explicit height, and
+it manages its own scrolling.
 
 ## Task shape
 
@@ -102,17 +126,119 @@ const grouped: TimelineTask[] = [
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `tasks` | `TimelineTask[]` | — | Required. Rows to render |
-| `title` | `string` | `"Timeline"` | Heading |
-| `updatedAt` | `string` | — | Small line under the heading, e.g. a sync timestamp |
-| `sourceUrl` | `string \| null` | — | Makes the heading a link to the data source |
-| `filterFields` | `string[]` | `[]` | Fields offered as dropdown filters |
+| `filter` | `string` | `""` | Text filter matched against task names |
+| `granularity` | `"day" \| "week" \| "month"` | `"week"` | Zoom level |
+| `statusFilter` | `string[]` | `[]` | Keeps tasks with any of these statuses |
+| `extraFieldFilters` | `Record<string, string>` | `{}` | Exact matches on extra task fields |
 | `popupFields` | `string[]` | `[]` | Fields listed in the task popover |
 | `statusField` | `string` | — | Field holding an explicit status |
 | `locale` | `string` | `"pt-br"` | dayjs locale for month/weekday/date formatting |
 | `labels` | `Partial<TimelineLabels>` | pt-BR | UI strings and status names |
 | `statusColors` | `Record<string, string>` | `{}` | Initial colors keyed by status label |
 | `onStatusColorsChange` | `(colors) => void` | — | Called when a color is picked in the legend |
+| `scrollRef` | `RefObject<HTMLDivElement>` | — | Usually `useTimeline().scrollRef`; enables `scrollToToday()` |
 | `className` | `string` | — | Extra classes on the root element |
+
+## Bring your own controls
+
+`Timeline` renders the grid, the legend and the task popover — nothing above it.
+The title, search box, status pills, field dropdowns, zoom buttons and "today"
+button are yours; `useTimeline` gives you the state and the actions behind them:
+
+```tsx
+import { Timeline, useTimeline } from "timeline-tasks";
+
+export function Roadmap({ tasks }: { tasks: TimelineTask[] }) {
+  const timeline = useTimeline({
+    tasks,
+    statusField: "status",
+    filterFields: ["owner"],
+  });
+
+  return (
+    <div style={{ height: "100vh" }} className="flex flex-col">
+      <div className="flex flex-wrap items-center gap-2 p-2">
+        <input
+          value={timeline.filter}
+          onChange={(event) => timeline.setFilter(event.target.value)}
+          placeholder="Filter tasks..."
+        />
+
+        {timeline.statusOptions.map((status) => (
+          <button
+            key={status}
+            aria-pressed={timeline.statusFilter.includes(status)}
+            onClick={() => timeline.toggleStatus(status)}
+          >
+            {status}
+          </button>
+        ))}
+
+        {Object.entries(timeline.filterOptions).map(([field, values]) => (
+          <select
+            key={field}
+            value={timeline.extraFieldFilters[field] ?? ""}
+            onChange={(event) =>
+              timeline.setExtraFieldFilter(field, event.target.value)
+            }
+          >
+            <option value="">{field}</option>
+            {values.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        ))}
+
+        {(["day", "week", "month"] as const).map((value) => (
+          <button
+            key={value}
+            aria-pressed={timeline.granularity === value}
+            onClick={() => timeline.setGranularity(value)}
+          >
+            {value}
+          </button>
+        ))}
+
+        {timeline.showScrollToToday && (
+          <button onClick={timeline.scrollToToday}>Today</button>
+        )}
+      </div>
+
+      <div className="min-h-0 flex-1">
+        <Timeline
+          tasks={tasks}
+          filter={timeline.filter}
+          granularity={timeline.granularity}
+          statusFilter={timeline.statusFilter}
+          extraFieldFilters={timeline.extraFieldFilters}
+          statusField="status"
+          scrollRef={timeline.scrollRef}
+        />
+      </div>
+    </div>
+  );
+}
+```
+
+What `useTimeline` returns:
+
+| Field | Description |
+| --- | --- |
+| `filter`, `setFilter` | text filter |
+| `granularity`, `setGranularity` | zoom level (`day` \| `week` \| `month`) |
+| `statusFilter`, `setStatusFilter`, `toggleStatus`, `clearStatusFilter` | status filtering |
+| `extraFieldFilters`, `setExtraFieldFilter(field, value)` | dropdown filtering |
+| `clearFilters`, `hasActiveFilters` | reset everything / detect active filters |
+| `filterOptions` | `{ field: values[] }` for your dropdowns |
+| `statusOptions` | distinct status values for your pills |
+| `timelineData` | computed range and geometry, e.g. for your own date header |
+| `scrollRef` | pass to `<Timeline scrollRef={...}>` |
+| `scrollToToday`, `showScrollToToday` | center today / show a button when it is off-screen |
+
+If you keep the state somewhere else (URL, store), skip the hook and pass
+`filter`, `granularity`, `statusFilter` and `extraFieldFilters` yourself.
 
 ## Statuses
 
@@ -143,8 +269,10 @@ are required** — whether or not your app uses Tailwind.
 The stylesheet bundles the utility classes the component uses and defines every
 color it needs on the `.timeline-tasks` root element. Those variables are
 namespaced with `--tt-`, so your theme cannot change the timeline's colors and
-the timeline cannot change yours. It has no Tailwind preflight either, so it
-never resets your app's styles.
+the timeline cannot change yours. It ships no Tailwind preflight, so it never
+resets your app's styles; the only reset it contains is a minimal one scoped to
+`.timeline-tasks` (`box-sizing`, visible borders and unstyled buttons), which
+the bars need to render correctly.
 
 ### Changing colors (optional)
 
@@ -190,8 +318,9 @@ variables in the dark scope:
 
 ## Localization
 
-`locale` handles dates and weekday/month names. For the interface strings, pass
-any subset of the labels:
+`locale` handles dates and weekday/month names. Strings rendered *inside* the
+component (sidebar header, legend, popover, empty state) come from `labels`;
+the text in your own toolbar is yours to write. Pass any subset of the labels:
 
 ```tsx
 <Timeline
@@ -199,12 +328,7 @@ any subset of the labels:
   locale="en"
   labels={{
     tasksHeader: "Tasks",
-    filterPlaceholder: "Filter tasks...",
     empty: "No tasks found",
-    today: "Today",
-    granularityDay: "Day",
-    granularityWeek: "Week",
-    granularityMonth: "Month",
     weekRangeSeparator: " – ",
     legendOverdue: "Due (overdue)",
     legendCompletedEarly: "Completed early",
@@ -239,7 +363,12 @@ Everything the component uses internally is available for reuse:
 
 ```ts
 import {
-  parseDate,          // "01/09/2026" | "2026-09-01" | 45841 → dayjs
+  useTimeline,             // headless state + actions for your own controls
+  getFilterOptions,
+  getStatusOptions,
+  matchesTimelineFilters,
+  hasActiveFilters,
+  parseDate,               // "01/09/2026" | "2026-09-01" | 45841 → dayjs
   formatDateToISO,
   serialToISO,
   calculateDateRange,
@@ -270,13 +399,14 @@ npm run build      # dist/index.js, dist/index.cjs, dist/index.d.ts, dist/task-t
 npm run pack:check # npm pack --dry-run, inspect what would be published
 ```
 
-`npm run dev` serves the demo app in `demo/` — sample grouped tasks, filters,
-the task popover, editable status colors and a dark-mode toggle — running
-against `src/` directly, so component edits hot reload. The demo is not part of
-the published package.
+`npm run dev` serves the demo app in `demo/` — sample grouped tasks, a toolbar
+built with `useTimeline` (search, status pills, field dropdown, zoom, today
+button), the task popover, editable status colors and a dark-mode toggle —
+running against `src/` directly, so component edits hot reload. The demo is not
+part of the published package.
 
-Tests cover the date helpers and bar geometry; the component itself has no DOM
-test suite.
+Tests cover the date helpers, bar geometry and the filtering helpers; the
+component itself has no DOM test suite.
 
 ## Publishing
 

@@ -148,9 +148,11 @@ export const getStatusColorValue = (
   const custom = customColors[status];
   if (!custom) return undefined;
 
+  // No trailing semicolon: these values are assigned through inline styles,
+  // where a stray `;` makes the declaration invalid.
   return {
     bg: custom,
-    darkBorder: `color-mix(in oklab, ${custom} 80%, black 20%);`,
-    lightBorder: `color-mix(in oklab, ${custom} 80%, white 20%);`,
+    darkBorder: `color-mix(in oklab, ${custom} 80%, black 20%)`,
+    lightBorder: `color-mix(in oklab, ${custom} 80%, white 20%)`,
   };
 };

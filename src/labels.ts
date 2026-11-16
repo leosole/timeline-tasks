@@ -20,16 +20,11 @@ export interface TimelineDetailLabels {
 
 export interface TimelineLabels {
   tasksHeader: string;
-  filterPlaceholder: string;
   empty: string;
-  today: string;
   expandAll: string;
   collapseAll: string;
   expandGroup: string;
   collapseGroup: string;
-  granularityDay: string;
-  granularityWeek: string;
-  granularityMonth: string;
   /** Placed between the first and last day of a week header cell. */
   weekRangeSeparator: string;
   legendOverdue: string;
@@ -42,16 +37,11 @@ export interface TimelineLabels {
 
 export const DEFAULT_LABELS: TimelineLabels = {
   tasksHeader: "Tarefas",
-  filterPlaceholder: "Filtrar tarefas...",
   empty: "Nenhuma tarefa encontrada",
-  today: "Hoje",
   expandAll: "Expandir tudo",
   collapseAll: "Recolher tudo",
   expandGroup: "Expandir grupo",
   collapseGroup: "Recolher grupo",
-  granularityDay: "Dia",
-  granularityWeek: "Semana",
-  granularityMonth: "Mês",
   weekRangeSeparator: " a ",
   legendOverdue: "Previsto (atrasado)",
   legendCompletedEarly: "Concluído antes do previsto",
