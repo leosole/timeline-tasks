@@ -1,0 +1,36 @@
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@source "./**/*.{ts,tsx}";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-background: #ffffff;
+  --color-card: #f8f9fa;
+  --color-foreground: #1a1a1a;
+  --color-muted-foreground: #666666;
+  --color-muted: #f0f0f0;
+  --color-border: #e0e0e0;
+  --color-primary: #4a90d9;
+  --color-primary-hover: #417cbb;
+  --color-accent: #c0deff;
+  --color-secondary: #6c757d;
+  --color-timeline-doing: #eab308;
+  --color-timeline-done: #22c55e;
+  --color-timeline-overdue: #ef4444;
+  --color-timeline-not-started: #9ca3af;
+  --color-timeline-today: #4a90d9;
+}
+
+/* Dark theme tokens. Add the `dark` class to an ancestor to enable them. */
+.dark {
+  --color-background: #1a1a1a;
+  --color-card: #2d2d2d;
+  --color-foreground: #e5e5e5;
+  --color-muted-foreground: #999999;
+  --color-accent: #123d6b;
+  --color-muted: #333333;
+  --color-border: #404040;
+  color-scheme: light dark;
+}

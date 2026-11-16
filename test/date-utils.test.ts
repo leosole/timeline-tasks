@@ -1,0 +1,145 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  calculateDatePosition,
+  calculateDateRange,
+  formatDateToISO,
+  generateTimelineData,
+  getCurrentDatePosition,
+  getDaySize,
+  parseDate,
+  serialToISO,
+} from "../src/lib/date-utils";
+
+const iso = (value: ReturnType<typeof parseDate>) =>
+  value ? value.format("YYYY-MM-DD") : null;
+
+describe("parseDate", () => {
+  it("parses ISO dates", () => {
+    expect(iso(parseDate("2026-09-01"))).toBe("2026-09-01");
+  });
+
+  it("parses Brazilian slash dates", () => {
+    expect(iso(parseDate("01/09/2026"))).toBe("2026-09-01");
+    expect(iso(parseDate("1/9/2026"))).toBe("2026-09-01");
+  });
+
+  it("parses two-digit years", () => {
+    expect(iso(parseDate("01/09/26"))).toBe("2026-09-01");
+  });
+
+  it("parses Excel serial numbers", () => {
+    expect(iso(parseDate(45841))).toBe("2025-07-03");
+    expect(iso(parseDate("45841"))).toBe("2025-07-03");
+    expect(iso(parseDate("45841.625"))).toBe("2025-07-03");
+  });
+
+  it("returns null for missing values", () => {
+    expect(parseDate("")).toBeNull();
+    expect(parseDate(null)).toBeNull();
+    expect(parseDate(undefined)).toBeNull();
+  });
+});
+
+describe("serialToISO", () => {
+  it("rejects serials outside the supported range", () => {
+    expect(serialToISO(0)).toBeNull();
+    expect(serialToISO(-10)).toBeNull();
+    expect(serialToISO(Number.NaN)).toBeNull();
+  });
+});
+
+describe("formatDateToISO", () => {
+  it("normalizes every supported input to ISO", () => {
+    expect(formatDateToISO("01/09/2026")).toBe("2026-09-01");
+    expect(formatDateToISO("2026-09-01")).toBe("2026-09-01");
+    expect(formatDateToISO("")).toBeNull();
+  });
+});
+
+describe("calculateDateRange", () => {
+  it("pads the task range by five days on each side", () => {
+    const range = calculateDateRange([
+      { name: "A", start: "2026-01-10" },
+      { name: "B", end: "2026-01-20" },
+    ]);
+
+    expect(range.start.format("YYYY-MM-DD")).toBe("2026-01-05");
+    expect(range.end.format("YYYY-MM-DD")).toBe("2026-01-25");
+  });
+
+  it("falls back to a symmetric range around today", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-15T12:00:00"));
+    const range = calculateDateRange([]);
+
+    expect(range.start.format("YYYY-MM-DD")).toBe("2026-02-13");
+    expect(range.end.format("YYYY-MM-DD")).toBe("2026-04-14");
+  });
+});
+
+describe("generateTimelineData", () => {
+  const range = {
+    start: parseDate("2026-01-01")!,
+    end: parseDate("2026-01-10")!,
+  };
+
+  it("includes both range ends", () => {
+    const data = generateTimelineData(range, "day");
+
+    expect(data.totalDays).toBe(10);
+    expect(data.days[0].date).toBe("2026-01-01");
+    expect(data.days[9].date).toBe("2026-01-10");
+    expect(data.dayIndex.get("2026-01-05")).toBe(4);
+  });
+
+  it("uses a day size per granularity", () => {
+    expect(getDaySize("day")).toBe(24);
+    expect(getDaySize("week")).toBe(10);
+    expect(getDaySize("month")).toBe(3);
+    expect(generateTimelineData(range, "week").daySize).toBe(10);
+  });
+
+  it("adds week and month labels for the coarser granularities", () => {
+    const week = generateTimelineData(range, "week");
+    const month = generateTimelineData(range, "month");
+
+    expect(week.days[0].weekLabel).toBeTruthy();
+    expect(month.days[0].monthLabel).toBe("janeiro");
+  });
+
+  it("maps dates to positions, and unknown dates to -1", () => {
+    const data = generateTimelineData(range, "day");
+
+    expect(calculateDatePosition("2026-01-05", data)).toBe(108);
+    expect(calculateDatePosition("2025-12-25", data)).toBe(-1);
+  });
+});
+
+describe("getCurrentDatePosition", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-05T12:00:00"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("returns the center of today's day cell", () => {
+    const data = generateTimelineData(
+      { start: parseDate("2026-01-01")!, end: parseDate("2026-01-10")! },
+      "day",
+    );
+
+    expect(getCurrentDatePosition(data)).toBe(108);
+  });
+
+  it("returns -1 when today is outside the range", () => {
+    const data = generateTimelineData(
+      { start: parseDate("2026-01-01")!, end: parseDate("2026-01-03")! },
+      "day",
+    );
+
+    expect(getCurrentDatePosition(data)).toBe(-1);
+  });
+});

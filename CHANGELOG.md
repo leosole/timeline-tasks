@@ -1,0 +1,41 @@
+# Changelog
+
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.1.0] - 2026-11-16
+
+### Added
+
+- `Timeline` component extracted from the gsheets-timeline app: frozen sidebar
+  and header, day/week/month granularity, task bars, overdue and delay
+  overlays, "completed before the due date" markers, current-day line and
+  scroll-to-today, grouping with collapsible parents, text and field filters,
+  legend with status color pickers, and a task detail popover.
+- Precompiled `timeline-tasks/styles.css` (Tailwind v4 theme tokens and
+  utilities, no preflight) so consumers do not need Tailwind.
+- `locale` prop plus overridable `labels` for UI strings and status names.
+- Public `TimelineTask` type, typed props, and exported date/status helpers
+  (`parseDate`, `calculateDateRange`, `calculateBarMetrics`, ...).
+- Build, typecheck and test scripts, ESM + CJS + type declarations output, and
+  publishing scripts (`release:patch`, `release:minor`, `release:major`).
+
+### Changed from the original app component
+
+- Sheets-specific internals renamed: `__sheetRow` → `row`,
+  `__groupParentRow` → `parentRow`, `__isGroupParent` → `isGroupParent`,
+  `__groupChildCount` → `groupChildCount`, `__groupCollapsed` → `groupCollapsed`.
+- `sheetUrl` → `sourceUrl`, `generatedAt` → `updatedAt`.
+- Derived statuses use stable identifiers (`not-started`, `in-progress`,
+  `overdue`, `done`) instead of Portuguese literals; display names come from
+  `labels`.
+- Status color changes flow through props/callbacks instead of the global
+  `timeline:status-color-change` window event.
+- No global `dayjs.locale()` call: the `locale` prop drives formatting.
+
+[Unreleased]: https://github.com/leosole/timeline-tasks/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/leosole/timeline-tasks/releases/tag/v0.1.0

@@ -1,0 +1,167 @@
+import React, { useMemo } from "react";
+import dayjs from "dayjs";
+import { cn } from "./lib/cn";
+import type { Granularity, TimelineData } from "./lib/date-utils";
+
+export interface TimelineHeaderProps {
+  timelineData: TimelineData;
+  granularity: Granularity;
+  daySize: number;
+  locale: string;
+  weekRangeSeparator: string;
+}
+
+export const TimelineHeader: React.FC<TimelineHeaderProps> = ({
+  timelineData,
+  granularity,
+  daySize,
+  locale,
+  weekRangeSeparator,
+}) => {
+  const days = useMemo(
+    () =>
+      timelineData.days.map((day) => {
+        const date = dayjs(day.date).locale(locale);
+        return {
+          ...day,
+          displayLabel:
+            granularity === "day"
+              ? date.date().toString()
+              : granularity === "week"
+                ? date.format("dd")
+                : date.date().toString(),
+        };
+      }),
+    [timelineData.days, granularity, locale],
+  );
+
+  const months = useMemo(() => {
+    const result: { label: string; span: number }[] = [];
+    let currentMonth = "";
+    let currentSpan = 0;
+    days.forEach((day, index) => {
+      const monthLabel = dayjs(day.date).locale(locale).format("MMMM YYYY");
+      if (monthLabel !== currentMonth) {
+        if (currentMonth) result.push({ label: currentMonth, span: currentSpan });
+        currentMonth = monthLabel;
+        currentSpan = 1;
+      } else {
+        currentSpan++;
+      }
+      if (index === days.length - 1) {
+        result.push({ label: currentMonth, span: currentSpan });
+      }
+    });
+    return result;
+  }, [days, locale]);
+
+  const weeks = useMemo(() => {
+    if (granularity !== "week") return [];
+    const result: { label: string; span: number }[] = [];
+    let weekStart: dayjs.Dayjs | null = null;
+    let weekDays = 0;
+
+    const formatWeek = (start: dayjs.Dayjs, span: number) => {
+      const end = start.add(span - 1, "day");
+      const format = end.month() === start.month() ? "D" : "D/M";
+      return {
+        label: `${start.format(format)}${weekRangeSeparator}${end.format(format)}`,
+        span,
+      };
+    };
+
+    days.forEach((day, index) => {
+      const currentDay = dayjs(day.date).locale(locale);
+      if (currentDay.day() === 1 || weekStart === null) {
+        if (weekStart && weekDays > 0) {
+          result.push(formatWeek(weekStart, weekDays));
+        }
+        weekStart = currentDay;
+        weekDays = 1;
+      } else {
+        weekDays++;
+      }
+      if (index === days.length - 1 && weekStart) {
+        result.push(formatWeek(weekStart, weekDays));
+      }
+    });
+    return result;
+  }, [days, granularity, locale, weekRangeSeparator]);
+
+  const todayStr = useMemo(() => dayjs().format("YYYY-MM-DD"), []);
+
+  return (
+    <div className="relative h-16 border-b border-border bg-muted/50">
+      <div className="flex h-full flex-col justify-center">
+        {granularity === "month" ? (
+          <div className="flex h-full items-end pb-1">
+            {months.map((month, index) => (
+              <div
+                key={index}
+                className="flex h-full items-end border-r border-border pb-1 text-center text-xs font-medium leading-3 text-muted-foreground last:border-r-0"
+                style={{ width: `${month.span * daySize}px` }}
+              >
+                {month.label.split(" ")[0]}
+              </div>
+            ))}
+          </div>
+        ) : granularity === "week" ? (
+          <>
+            <div className="flex h-1/2 items-end pb-1">
+              {months.map((month, index) => (
+                <div
+                  key={index}
+                  className="text-center text-xs font-medium leading-3 text-muted-foreground"
+                  style={{ width: `${month.span * daySize}px` }}
+                >
+                  {month.label}
+                </div>
+              ))}
+            </div>
+            <div className="flex h-1/2 items-start border-t border-border pt-1">
+              {weeks.map((week, index) => (
+                <div
+                  key={index}
+                  className="text-center text-xs font-medium leading-3 text-muted-foreground"
+                  style={{ width: `${week.span * daySize}px` }}
+                >
+                  {week.label}
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex h-1/2 items-end pb-1">
+              {months.map((month, index) => (
+                <div
+                  key={index}
+                  className="text-center text-xs font-medium leading-3 text-muted-foreground"
+                  style={{ width: `${month.span * daySize}px` }}
+                >
+                  {month.label}
+                </div>
+              ))}
+            </div>
+            <div className="flex h-1/2 items-start border-t border-border pt-1">
+              {days.map((day, index) => (
+                <div
+                  key={index}
+                  className={cn(
+                    "border-r border-border text-center text-xs leading-3 last:border-r-0",
+                    day.date === todayStr
+                      ? "bg-timeline-today/10 font-bold text-timeline-today"
+                      : "text-muted-foreground",
+                  )}
+                  style={{ width: `${daySize}px` }}
+                >
+                  {day.displayLabel}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
