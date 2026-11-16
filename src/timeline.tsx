@@ -53,7 +53,11 @@ export const Timeline: React.FC<TimelineProps> = ({
 
   const timelineData = useMemo(
     () =>
-      generateTimelineData(calculateDateRange(tasks), granularity, locale),
+      generateTimelineData(
+        calculateDateRange(tasks, granularity),
+        granularity,
+        locale,
+      ),
     [tasks, granularity, locale],
   );
   const currentDatePx = useMemo(

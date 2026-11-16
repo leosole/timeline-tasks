@@ -89,7 +89,11 @@ export const useTimeline = ({
 
   const timelineData = useMemo(
     () =>
-      generateTimelineData(calculateDateRange(tasks), granularity, locale),
+      generateTimelineData(
+        calculateDateRange(tasks, granularity),
+        granularity,
+        locale,
+      ),
     [tasks, granularity, locale],
   );
   const currentDatePx = useMemo(

@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The visible range now snaps to the selected granularity: whole weeks
+  (Monday–Sunday) for `week`, whole months for `month`, so changing the zoom
+  level recalculates the range instead of keeping edges in the middle of a week
+  or month.
+
 - Task bars rendered as a smaller colored block inside the browser's native
   button chrome (UA padding/border, and borders were invisible without
   Tailwind's preflight). The bar is now a single element; a minimal reset

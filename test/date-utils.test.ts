@@ -57,14 +57,56 @@ describe("formatDateToISO", () => {
 });
 
 describe("calculateDateRange", () => {
-  it("pads the task range by five days on each side", () => {
-    const range = calculateDateRange([
-      { name: "A", start: "2026-01-10" },
-      { name: "B", end: "2026-01-20" },
-    ]);
+  const tasks = [
+    { name: "A", start: "2026-01-10" },
+    { name: "B", end: "2026-01-20" },
+  ];
+
+  it("pads the day range by five days on each side", () => {
+    const range = calculateDateRange(tasks);
 
     expect(range.start.format("YYYY-MM-DD")).toBe("2026-01-05");
     expect(range.end.format("YYYY-MM-DD")).toBe("2026-01-25");
+  });
+
+  it("snaps the week range to whole Monday-to-Sunday weeks", () => {
+    const range = calculateDateRange(tasks, "week");
+
+    expect(range.start.format("YYYY-MM-DD")).toBe("2026-01-05");
+    expect(range.start.day()).toBe(1); // Monday
+    expect(range.end.format("YYYY-MM-DD")).toBe("2026-01-25");
+    expect(range.end.day()).toBe(0); // Sunday
+  });
+
+  it("snaps the month range to whole months", () => {
+    const range = calculateDateRange(tasks, "month");
+
+    expect(range.start.format("YYYY-MM-DD")).toBe("2026-01-01");
+    expect(range.end.format("YYYY-MM-DD")).toBe("2026-01-31");
+  });
+
+  it("spans every touched month when tasks cross a month boundary", () => {
+    const range = calculateDateRange(
+      [
+        { name: "A", start: "2026-01-31" },
+        { name: "B", end: "2026-02-01" },
+      ],
+      "month",
+    );
+
+    expect(range.start.format("YYYY-MM-DD")).toBe("2026-01-01");
+    expect(range.end.format("YYYY-MM-DD")).toBe("2026-02-28");
+  });
+
+  it("turns a month range into full months of days", () => {
+    const data = generateTimelineData(
+      calculateDateRange(tasks, "month"),
+      "month",
+    );
+
+    expect(data.totalDays).toBe(31);
+    expect(data.days[0].date).toBe("2026-01-01");
+    expect(data.days[data.days.length - 1].date).toBe("2026-01-31");
   });
 
   it("falls back to a symmetric range around today", () => {

@@ -29,11 +29,13 @@ export {
   calculateDatePosition,
   calculateDateRange,
   formatDateToISO,
+  endOfWeek,
   generateTimelineData,
   getCurrentDatePosition,
   getDaySize,
   parseDate,
   serialToISO,
+  startOfWeek,
 } from "./lib/date-utils";
 export type {
   Granularity,

@@ -40,7 +40,46 @@ export const getDaySize = (granularity: Granularity): number => {
   }
 };
 
-export const calculateDateRange = (tasks: Array<Record<string, unknown>>) => {
+/** First day of the week containing `date`. Weeks start on Monday. */
+export const startOfWeek = (date: dayjs.Dayjs): dayjs.Dayjs =>
+  date.subtract((date.day() + 6) % 7, "day").startOf("day");
+
+/** Last day of the week containing `date`. Weeks start on Monday. */
+export const endOfWeek = (date: dayjs.Dayjs): dayjs.Dayjs =>
+  startOfWeek(date).add(6, "day").endOf("day");
+
+/** Extra days of context on each side, per granularity. */
+const RANGE_PADDING_DAYS: Record<Granularity, number> = {
+  day: 5,
+  week: 0,
+  month: 0,
+};
+
+const snapToUnit = (
+  date: dayjs.Dayjs,
+  granularity: Granularity,
+  edge: "start" | "end",
+): dayjs.Dayjs => {
+  switch (granularity) {
+    case "month":
+      return edge === "start" ? date.startOf("month") : date.endOf("month");
+    case "week":
+      return edge === "start" ? startOfWeek(date) : endOfWeek(date);
+    default:
+      return edge === "start" ? date.startOf("day") : date.endOf("day");
+  }
+};
+
+/**
+ * Visible range for the given tasks, snapped to whole units of `granularity`:
+ * full days, whole weeks (Monday to Sunday) or whole months. Changing the
+ * granularity therefore recalculates the range instead of leaving it part-way
+ * through a week or month.
+ */
+export const calculateDateRange = (
+  tasks: Array<Record<string, unknown>>,
+  granularity: Granularity = "day",
+) => {
   const now = dayjs();
   let minDate: dayjs.Dayjs | null = null;
   let maxDate: dayjs.Dayjs | null = null;
@@ -57,10 +96,18 @@ export const calculateDateRange = (tasks: Array<Record<string, unknown>>) => {
   }
 
   if (!minDate || !maxDate) {
-    return { start: now.subtract(30, "day"), end: now.add(30, "day") };
+    return {
+      start: snapToUnit(now.subtract(30, "day"), granularity, "start"),
+      end: snapToUnit(now.add(30, "day"), granularity, "end"),
+    };
   }
 
-  return { start: minDate.subtract(5, "days"), end: maxDate.add(5, "days") };
+  const padding = RANGE_PADDING_DAYS[granularity];
+
+  return {
+    start: snapToUnit(minDate, granularity, "start").subtract(padding, "day"),
+    end: snapToUnit(maxDate, granularity, "end").add(padding, "day"),
+  };
 };
 
 export const generateTimelineData = (

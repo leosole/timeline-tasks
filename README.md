@@ -139,6 +139,22 @@ const grouped: TimelineTask[] = [
 | `scrollRef` | `RefObject<HTMLDivElement>` | — | Usually `useTimeline().scrollRef`; enables `scrollToToday()` |
 | `className` | `string` | — | Extra classes on the root element |
 
+## Range and granularity
+
+The visible range always follows the selected `granularity`, so it never starts
+or ends in the middle of a week or a month:
+
+| `granularity` | Range |
+| --- | --- |
+| `day` | first to last task day, padded by five days on each side |
+| `week` | Monday of the first task's week to Sunday of the last task's week |
+| `month` | first day of the first task's month to last day of the last task's month |
+
+Changing `granularity` recalculates the range, so switching from month to week
+re-renders against whole weeks instead of keeping month edges. The same logic is
+available as `calculateDateRange(tasks, granularity)`, with `startOfWeek` and
+`endOfWeek` (Monday-based) exported alongside it.
+
 ## Bring your own controls
 
 `Timeline` renders the grid, the legend and the task popover — nothing above it.
