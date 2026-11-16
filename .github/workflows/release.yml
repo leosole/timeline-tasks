@@ -24,22 +24,25 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # Reads the pinned version from package.json#packageManager.
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run build
+      - run: pnpm run typecheck
+      - run: pnpm test
+      - run: pnpm run build
 
       # Analyzes the commits since the last tag, bumps the version, updates
       # CHANGELOG.md, publishes to npm, creates the GitHub release and commits
       # the version + changelog back to main with [skip ci].
       - name: semantic-release
-        run: npx semantic-release
+        run: pnpm exec semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

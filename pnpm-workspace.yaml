@@ -1,0 +1,6 @@
+# pnpm 12 blocks dependency lifecycle scripts unless they are reviewed here.
+allowBuilds:
+  "@parcel/watcher": true
+  "@tailwindcss/oxide": true
+  esbuild: true
+  fsevents: true

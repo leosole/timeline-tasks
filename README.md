@@ -388,18 +388,21 @@ import {
 
 ## Development
 
+This repository uses [pnpm](https://pnpm.io/); the version is pinned in
+`packageManager`, so `corepack enable` makes the right `pnpm` available.
+
 ```bash
-npm install
-npm run dev        # demo app with hot reload → http://localhost:5173
-npm run build:demo # static build of the demo (demo/dist)
-npm run dev:build  # rebuild the package dist on change
-npm run typecheck
-npm test
-npm run build      # dist/index.js, dist/index.cjs, dist/index.d.ts, dist/task-timeline.css
-npm run pack:check # npm pack --dry-run, inspect what would be published
+pnpm install
+pnpm dev        # demo app with hot reload → http://localhost:5173
+pnpm build:demo # static build of the demo (demo/dist)
+pnpm dev:build  # rebuild the package dist on change
+pnpm typecheck
+pnpm test
+pnpm build      # dist/index.js, dist/index.cjs, dist/index.d.ts, dist/task-timeline.css
+pnpm pack:check # dry-run of the published tarball
 ```
 
-`npm run dev` serves the demo app in `demo/` — sample grouped tasks, a toolbar
+`pnpm dev` serves the demo app in `demo/` — sample grouped tasks, a toolbar
 built with `useTimeline` (search, status pills, field dropdown, zoom, today
 button), the task popover, editable status colors and a dark-mode toggle —
 running against `src/` directly, so component edits hot reload. The demo is not
@@ -452,15 +455,15 @@ repository secret — never commit it.
 from (`0.1.0`). semantic-release publishes the *next* version derived from
 commits, and commits such as `feat:` will produce `0.2.0` as the first release.
 If you want `0.1.0` itself on npm, publish it locally once
-(`npm login && npm publish`) before wiring the workflow — semantic-release then
-continues from there.
+(`pnpm login && pnpm publish`) before wiring the workflow — semantic-release
+then continues from there.
 
 To preview what the next release would be without publishing, run
-`npm run release:dry-run` locally with `GITHUB_TOKEN` set and a git remote
+`pnpm release:dry-run` locally with `GITHUB_TOKEN` set and a git remote
 configured.
 
 `prepublishOnly` still runs the typecheck, the tests and the build before every
-publish, so a broken build never reaches the registry. `npm publish` also skips
+publish, so a broken build never reaches the registry. Publishing also skips
 anything outside `files` (`dist` plus the docs), so sources, tests and
 `node_modules` are never uploaded.
 
