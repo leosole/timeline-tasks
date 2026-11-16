@@ -35,10 +35,19 @@ export const Timeline: React.FC<TimelineProps> = ({
   labels: labelOverrides,
   statusColors: initialStatusColors,
   onStatusColorsChange,
+  components,
   scrollRef,
   className,
 }) => {
   const labels = useMemo(() => resolveLabels(labelOverrides), [labelOverrides]);
+
+  // Any piece the caller did not replace falls back to the default component.
+  const {
+    TaskBar: TaskBarComponent = TaskBar,
+    TaskPopover: TaskPopoverComponent = TaskPopover,
+    Legend: LegendComponent = Legend,
+    TimelineHeader: TimelineHeaderComponent = TimelineHeader,
+  } = components ?? {};
 
   const [selectedTask, setSelectedTask] = useState<TimelineTask | null>(null);
   const [statusColors, setStatusColors] = useState<Record<string, string>>(
@@ -293,7 +302,7 @@ export const Timeline: React.FC<TimelineProps> = ({
 
           {/* ── [0,1] Timeline header — sticks to top ─────────────── */}
           <div className="sticky top-0 z-40 bg-muted border-b border-border">
-            <TimelineHeader
+            <TimelineHeaderComponent
               timelineData={timelineData}
               granularity={granularity}
               daySize={daySize}
@@ -376,7 +385,7 @@ export const Timeline: React.FC<TimelineProps> = ({
                 key={task.row ?? `bar-${index}`}
                 className="h-10 relative hover:bg-muted/30 flex items-center border-b border-border"
               >
-                <TaskBar
+                <TaskBarComponent
                   task={task}
                   timelineData={timelineData}
                   granularity={granularity}
@@ -402,7 +411,7 @@ export const Timeline: React.FC<TimelineProps> = ({
         </div>
       </div>
 
-      <Legend
+      <LegendComponent
         labels={labels}
         statusOptions={statusOptions}
         statusColors={statusColors}
@@ -411,7 +420,7 @@ export const Timeline: React.FC<TimelineProps> = ({
       />
 
       {selectedTask && (
-        <TaskPopover
+        <TaskPopoverComponent
           task={selectedTask}
           popupFields={popupFields}
           onClose={() => setSelectedTask(null)}

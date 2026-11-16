@@ -1,5 +1,5 @@
 export { Timeline } from "./timeline";
-export type { TimelineProps, TimelineTask } from "./types";
+export type { TimelineComponents, TimelineProps, TimelineTask } from "./types";
 
 export { useTimeline } from "./use-timeline";
 export type { TimelineController, UseTimelineOptions } from "./use-timeline";
@@ -13,9 +13,13 @@ export {
 export type { TimelineFilterState } from "./lib/filtering";
 
 export { Legend } from "./legend";
+export type { LegendProps } from "./legend";
 export { TaskBar } from "./task-bar";
+export type { TaskBarProps } from "./task-bar";
 export { TaskPopover } from "./task-popover";
+export type { TaskPopoverProps } from "./task-popover";
 export { TimelineHeader } from "./timeline-header";
+export type { TimelineHeaderProps } from "./timeline-header";
 
 export { DEFAULT_LABELS, resolveLabels } from "./labels";
 export type {

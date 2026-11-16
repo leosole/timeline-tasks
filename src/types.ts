@@ -1,6 +1,10 @@
-import type { RefObject } from "react";
+import type { ComponentType, RefObject } from "react";
 import type { Granularity, TimelineData } from "./lib/date-utils";
 import type { TimelineLabels } from "./labels";
+import type { TaskBarProps } from "./task-bar";
+import type { TaskPopoverProps } from "./task-popover";
+import type { LegendProps } from "./legend";
+import type { TimelineHeaderProps } from "./timeline-header";
 
 /**
  * A task row.
@@ -25,6 +29,23 @@ export interface TimelineTask {
   /** Starts the group collapsed. */
   groupCollapsed?: boolean;
   [key: string]: unknown;
+}
+
+/**
+ * Components the timeline renders itself. Every entry is optional: pass your
+ * own to replace that piece, or leave it out to keep the default. Custom
+ * components receive exactly the same props as the default ones, so a
+ * replacement can wrap the original and add to it.
+ */
+export interface TimelineComponents {
+  /** Bar drawn for each task row. */
+  TaskBar?: ComponentType<TaskBarProps>;
+  /** Detail popover shown when a task is selected. */
+  TaskPopover?: ComponentType<TaskPopoverProps>;
+  /** Status/overlay legend below the grid. */
+  Legend?: ComponentType<LegendProps>;
+  /** Date header above the rows. */
+  TimelineHeader?: ComponentType<TimelineHeaderProps>;
 }
 
 /**
@@ -54,6 +75,11 @@ export interface TimelineProps {
    */
   statusColors?: Record<string, string>;
   onStatusColorsChange?: (colors: Record<string, string>) => void;
+  /**
+   * Replacements for the components the timeline renders internally. Any
+   * omitted entry falls back to the default component.
+   */
+  components?: TimelineComponents;
   /**
    * Scroll container ref, normally `useTimeline().scrollRef`, so
    * `scrollToToday()` and the scroll tracking work.

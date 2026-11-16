@@ -138,8 +138,59 @@ const grouped: TimelineTask[] = [
 | `labels` | `Partial<TimelineLabels>` | pt-BR | UI strings and status names |
 | `statusColors` | `Record<string, string>` | `{}` | Initial colors keyed by status label |
 | `onStatusColorsChange` | `(colors) => void` | — | Called when a color is picked in the legend |
+| `components` | `TimelineComponents` | `{}` | Replace built-in pieces: `TaskBar`, `TaskPopover`, `Legend`, `TimelineHeader` |
 | `scrollRef` | `RefObject<HTMLDivElement>` | — | Usually `useTimeline().scrollRef`; enables `scrollToToday()` |
 | `className` | `string` | — | Extra classes on the root element |
+
+## Custom components
+
+`components` swaps any of the pieces the timeline renders itself. Every entry is
+optional and falls back to the built-in component, and each replacement receives
+exactly the props the default one receives — so you can reuse the exported
+component, wrap it, or write your own from scratch.
+
+| Entry | Default | Props |
+| --- | --- | --- |
+| `TaskBar` | `TaskBar` | `task`, `timelineData`, `granularity`, `onSelect`, `statusField`, `statusColors`, `metrics` |
+| `TaskPopover` | `TaskPopover` | `task`, `popupFields`, `onClose`, `statusField`, `statusColors`, `locale`, `labels` |
+| `Legend` | `Legend` | `labels`, `statusOptions`, `statusColors`, `hasCustomStatusField`, `onColorChange` |
+| `TimelineHeader` | `TimelineHeader` | `timelineData`, `granularity`, `daySize`, `locale`, `weekRangeSeparator` |
+
+```tsx
+import {
+  Legend,
+  TaskBar,
+  Timeline,
+  type TaskBarProps,
+  type TimelineComponents,
+} from "timeline-tasks";
+
+// Wrap the default bar and add a label on top of it.
+function LabeledBar(props: TaskBarProps) {
+  return (
+    <div className="group relative">
+      <TaskBar {...props} />
+      <span className="pointer-events-none absolute left-2 top-0 text-[10px] font-medium">
+        {props.task.name}
+      </span>
+    </div>
+  );
+}
+
+// The legend keeps its default look but only shows the statuses.
+const CustomLegend: TimelineComponents["Legend"] = (props) => (
+  <Legend {...props} labels={{ ...props.labels, legendToday: "Hoje" }} />
+);
+
+<Timeline
+  tasks={tasks}
+  components={{ TaskBar: LabeledBar, Legend: CustomLegend }}
+/>;
+```
+
+In this example `TaskPopover` and `TimelineHeader` keep their defaults. The
+components types (`TaskBarProps`, `TaskPopoverProps`, `LegendProps`,
+`TimelineHeaderProps`) are exported so replacements can be typed.
 
 ## Range and granularity
 
