@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- GitHub Pages deployment of the demo (`pnpm build:pages` +
+  `.github/workflows/pages.yml`).
+
 - `useTimeline()` hook exporting the timeline state and actions (`filter`,
   `granularity`, status and field filters, `scrollToToday`, scroll visibility,
   `timelineData`), plus `getFilterOptions`, `getStatusOptions`,

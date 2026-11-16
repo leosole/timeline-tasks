@@ -411,6 +411,19 @@ part of the published package.
 Tests cover the date helpers, bar geometry and the filtering helpers; the
 component itself has no DOM test suite.
 
+## Demo site (GitHub Pages)
+
+`pnpm build:pages` builds the demo for GitHub Pages and
+`.github/workflows/pages.yml` deploys it on every push to `main`:
+
+- demo: `https://<owner>.github.io/timeline-tasks/`
+
+Enable Pages once in the repository: **Settings → Pages → Build and deployment
+→ Source: GitHub Actions**. The `build:pages` script passes
+`--base=/timeline-tasks/`, which must match the repository name for project
+pages — update it if you rename the repository. `pnpm build:demo` builds the
+same app for local use at the root path.
+
 ## Publishing
 
 Releases are automated with [semantic-release](https://semantic-release.gitbook.io/).

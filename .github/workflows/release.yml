@@ -18,6 +18,8 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,8 +43,10 @@ jobs:
       # Analyzes the commits since the last tag, bumps the version, updates
       # CHANGELOG.md, publishes to npm, creates the GitHub release and commits
       # the version + changelog back to main with [skip ci].
+      # Skipped while NPM_TOKEN is not configured, so the workflow does not
+      # fail before the registry credentials are added.
       - name: semantic-release
+        if: env.NPM_TOKEN != ''
         run: pnpm exec semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

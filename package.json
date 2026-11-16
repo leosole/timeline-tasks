@@ -57,6 +57,7 @@
     "dev:build": "tsup --watch --onSuccess \"node scripts/add-use-client.mjs\"",
     "build": "pnpm run build:js && pnpm run build:css",
     "build:demo": "vite build",
+    "build:pages": "vite build --base=/timeline-tasks/",
     "build:js": "tsup && node scripts/add-use-client.mjs",
     "build:css": "tailwindcss -i src/styles.css -o dist/task-timeline.css --minify",
     "typecheck": "tsc --noEmit",
