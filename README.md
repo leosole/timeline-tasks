@@ -192,6 +192,22 @@ In this example `TaskPopover` and `TimelineHeader` keep their defaults. The
 components types (`TaskBarProps`, `TaskPopoverProps`, `LegendProps`,
 `TimelineHeaderProps`) are exported so replacements can be typed.
 
+### What each default uses
+
+The defaults are built only from public exports, so a replacement can reproduce
+any of them exactly. Nothing is kept internal:
+
+| Component | Exports it uses | Why |
+| --- | --- | --- |
+| `TaskBar` | `calculateBarMetrics`, `BarMetrics`, `cn` | bar geometry, overlays and colors come from the metrics |
+| `TaskPopover` | `getTaskStatuses`, `isDerivedStatus`, `STATUS_TONE`, `STATUS_BORDER`, `STATUS_ICON`, `parseDate`, `dayjs`, `cn` | status badges and the start/end/due detail lines |
+| `Legend` | `DEFAULT_STATUS_ORDER`, `DEFAULT_STATUS_COLORS`, `getGeneratedStatusColor`, `DerivedStatus`, `cn` | which statuses to list, their base and fallback colors |
+| `TimelineHeader` | `dayjs`, `cn`, `TimelineData`, `TimelineDay`, `Granularity`, `TimelineHeaderProps` | month/week/day cell labels from `timelineData.days` |
+
+`dayjs` is re-exported from the package, so a custom component gets the same
+instance the built-ins use — with `customParseFormat`, `localizedFormat` and the
+`pt-br` locale already registered. No hook is needed to rebuild a component: their state comes entirely from the props they receive, and grid state (filters, collapse, colors) is managed by `Timeline` itself in every case.
+
 ## Range and granularity
 
 The visible range always follows the selected `granularity`, so it never starts
@@ -449,9 +465,15 @@ import {
   getTaskStatuses,
   pickPrimaryStatus,
   DEFAULT_STATUS_COLORS,
+  DEFAULT_STATUS_ORDER,
+  getGeneratedStatusColor,
+  STATUS_TONE,
+  STATUS_BORDER,
+  STATUS_ICON,
   DEFAULT_LABELS,
   resolveLabels,
   cn,
+  dayjs,                   // the same instance the components use
 } from "timeline-tasks";
 ```
 

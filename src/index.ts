@@ -12,7 +12,7 @@ export {
 } from "./lib/filtering";
 export type { TimelineFilterState } from "./lib/filtering";
 
-export { Legend } from "./legend";
+export { DEFAULT_STATUS_ORDER, Legend } from "./legend";
 export type { LegendProps } from "./legend";
 export { TaskBar } from "./task-bar";
 export type { TaskBarProps } from "./task-bar";
@@ -54,11 +54,23 @@ export {
   DEFAULT_STATUS_COLORS,
   DERIVED_STATUSES,
   getStatusBarClasses,
+  getGeneratedStatusColor,
   getStatusColorValue,
   getTaskStatuses,
   isDerivedStatus,
   pickPrimaryStatus,
+  STATUS_BORDER,
+  STATUS_ICON,
+  STATUS_TONE,
 } from "./lib/status";
-export type { DerivedStatus, TaskStatus } from "./lib/status";
+export type {
+  DerivedStatus,
+  StatusBarClasses,
+  TaskStatus,
+} from "./lib/status";
+
+// The same dayjs instance the components use, with its plugins and the pt-br
+// locale registered, for custom components that need date math or formatting.
+export { default as dayjs } from "dayjs";
 
 export { cn } from "./lib/cn";

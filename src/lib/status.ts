@@ -33,6 +33,13 @@ export const DEFAULT_STATUS_COLORS: Record<DerivedStatus, string> = {
   "not-started": "#9ca3af",
 };
 
+/**
+ * Fallback color for a custom status that has no color yet, based on its
+ * position so it stays the same across renders. Used by the legend.
+ */
+export const getGeneratedStatusColor = (index: number): string =>
+  `hsl(${(index * 63) % 360} 70% 60%)`;
+
 export interface StatusBarClasses {
   bg: string;
   border: string;

@@ -1,9 +1,14 @@
 import React, { useMemo, useRef } from "react";
 import { cn } from "./lib/cn";
-import { DEFAULT_STATUS_COLORS, type DerivedStatus } from "./lib/status";
+import {
+  DEFAULT_STATUS_COLORS,
+  getGeneratedStatusColor,
+  type DerivedStatus,
+} from "./lib/status";
 import type { TimelineLabels } from "./labels";
 
-const DEFAULT_STATUS_ORDER: DerivedStatus[] = [
+/** Order in which the derived statuses are listed in the legend. */
+export const DEFAULT_STATUS_ORDER: DerivedStatus[] = [
   "in-progress",
   "done",
   "overdue",
@@ -40,7 +45,7 @@ export const Legend: React.FC<LegendProps> = React.memo(
       }
       return statusOptions.map((label, index) => ({
         label,
-        color: statusColors[label] || `hsl(${(index * 63) % 360} 70% 60%)`,
+        color: statusColors[label] || getGeneratedStatusColor(index),
       }));
     }, [statusOptions, statusColors, hasCustomStatusField, labels]);
 
