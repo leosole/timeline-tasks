@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/leosole/timeline-tasks/compare/v1.2.0...v1.3.0) (2026-11-17)
+
+
+### Features
+
+* extend date range to include today for past and future tasks ([68f5d4d](https://github.com/leosole/timeline-tasks/commit/68f5d4d5e35f7f739e9451b8f463eee7deed25df))
+
 # [1.2.0](https://github.com/leosole/timeline-tasks/compare/v1.1.0...v1.2.0) (2026-11-17)
 
 
