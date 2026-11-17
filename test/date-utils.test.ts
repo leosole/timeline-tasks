@@ -62,6 +62,16 @@ describe("calculateDateRange", () => {
     { name: "B", end: "2026-01-20" },
   ];
 
+  // Today sits inside the task window unless a test moves it.
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-15T12:00:00"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("pads the day range by five days on each side", () => {
     const range = calculateDateRange(tasks);
 
@@ -110,12 +120,39 @@ describe("calculateDateRange", () => {
   });
 
   it("falls back to a symmetric range around today", () => {
-    vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-03-15T12:00:00"));
     const range = calculateDateRange([]);
 
     expect(range.start.format("YYYY-MM-DD")).toBe("2026-02-13");
     expect(range.end.format("YYYY-MM-DD")).toBe("2026-04-14");
+  });
+
+  it("extends the range to today when every task is in the past", () => {
+    vi.setSystemTime(new Date("2026-03-15T12:00:00"));
+    const range = calculateDateRange(tasks);
+
+    expect(range.start.format("YYYY-MM-DD")).toBe("2026-01-05");
+    expect(range.end.format("YYYY-MM-DD")).toBe("2026-03-20");
+  });
+
+  it("extends the range back to today when every task is in the future", () => {
+    vi.setSystemTime(new Date("2025-12-15T12:00:00"));
+    const range = calculateDateRange(tasks);
+
+    expect(range.start.format("YYYY-MM-DD")).toBe("2025-12-10");
+    expect(range.end.format("YYYY-MM-DD")).toBe("2026-01-25");
+  });
+
+  it("keeps whole granularity units when extending toward today", () => {
+    vi.setSystemTime(new Date("2026-03-15T12:00:00"));
+
+    const week = calculateDateRange(tasks, "week");
+    expect(week.start.format("YYYY-MM-DD")).toBe("2026-01-05"); // Monday
+    expect(week.end.format("YYYY-MM-DD")).toBe("2026-03-15"); // Sunday
+
+    const month = calculateDateRange(tasks, "month");
+    expect(month.start.format("YYYY-MM-DD")).toBe("2026-01-01");
+    expect(month.end.format("YYYY-MM-DD")).toBe("2026-03-31");
   });
 });
 

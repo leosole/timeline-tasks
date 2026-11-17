@@ -102,6 +102,11 @@ export const calculateDateRange = (
     };
   }
 
+  // Today is always inside the range: when every task lies in the past (or
+  // future), widen the task range so it reaches the current date.
+  if (now.isBefore(minDate, "day")) minDate = now;
+  if (now.isAfter(maxDate, "day")) maxDate = now;
+
   const padding = RANGE_PADDING_DAYS[granularity];
 
   return {
