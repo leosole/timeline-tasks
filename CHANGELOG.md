@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/leosole/timeline-tasks/compare/v1.1.0...v1.2.0) (2026-11-17)
+
+
+### Features
+
+* enhance legend component with generated status colors and export defaults ([51185ec](https://github.com/leosole/timeline-tasks/commit/51185ec9bddf60530aebe9e447933ad466407f8b))
+
 # [1.1.0](https://github.com/leosole/timeline-tasks/compare/v1.0.0...v1.1.0) (2026-11-16)
 
 
