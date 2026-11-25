@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/leosole/timeline-tasks/compare/v1.3.0...v1.4.0) (2026-11-25)
+
+
+### Features
+
+* restructure timeline tasks with nested subtasks and enhance filtering ([a502a3c](https://github.com/leosole/timeline-tasks/commit/a502a3c34e3d609e3e0f69dcfb20ba84c40b1bd8))
+
 # [1.3.0](https://github.com/leosole/timeline-tasks/compare/v1.2.0...v1.3.0) (2026-11-17)
 
 
