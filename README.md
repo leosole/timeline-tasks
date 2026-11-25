@@ -17,7 +17,7 @@ Sheets — you pass plain task objects.
 | Bars | start → end, falls back to due date, minimum 4px |
 | Overlays | overdue stripes, delay stripes, "completed before due" marker |
 | Today | current-day line, day badge and scroll-to-today button |
-| Grouping | mark rows as group parents, collapse/expand per group or all |
+| Grouping | nest subtasks with `children`, collapse/expand per group or all |
 | Filtering | filter state and helpers; you render the controls |
 | Colors | built-in status colors, editable in the legend, or pass your own |
 | Theming | light/dark via CSS custom properties |
@@ -106,22 +106,37 @@ it manages its own scrolling.
 | `start` | `string \| number` | Bar start. ISO (`2026-09-01`), Brazilian (`01/09/2026`) or Excel serial (`45841`) |
 | `end` | `string \| number` | Completion date; draws the main bar |
 | `due` | `string \| number` | Planned end; used for overdue and early-completion markers |
-| `row` | `number` | Stable row id, needed for grouping |
-| `parentRow` | `number` | `row` of the group this row belongs to |
-| `isGroupParent` | `boolean` | Marks a group header row |
-| `groupChildCount` | `number` | Number of children; a parent with 0 is not a group |
+| `children` | `TimelineTask[]` | Nested subtasks; a task with children is a group header |
 | `groupCollapsed` | `boolean` | Starts the group collapsed |
 
 Any other field is allowed (`[key: string]: unknown`) and can be displayed with
 `filterFields` / `popupFields`.
 
+Tasks nest through `children`, to any depth. A parent can carry its own dates
+and draws a summary bar; its children are indented under it. Group identity
+comes from the position in the tree, so no row ids are required.
+
 ```tsx
 const grouped: TimelineTask[] = [
-  { name: "Phase 1", row: 2, isGroupParent: true, groupChildCount: 2 },
-  { name: "Kickoff", row: 3, parentRow: 2, start: "2026-09-01", end: "2026-09-02" },
-  { name: "Research", row: 4, parentRow: 2, start: "2026-09-03", due: "2026-09-10" },
+  {
+    name: "Phase 1",
+    start: "2026-09-01",
+    due: "2026-09-10",
+    children: [
+      { name: "Kickoff", start: "2026-09-01", end: "2026-09-02" },
+      {
+        name: "Research",
+        start: "2026-09-03",
+        due: "2026-09-10",
+        children: [{ name: "Interviews", start: "2026-09-04" }],
+      },
+    ],
+  },
 ];
 ```
+
+Filters and date ranges see every nested task: a group is kept while it or a
+descendant matches, and a group holding a match is expanded automatically.
 
 ## Props
 
@@ -138,7 +153,7 @@ const grouped: TimelineTask[] = [
 | `labels` | `Partial<TimelineLabels>` | pt-BR | UI strings and status names |
 | `statusColors` | `Record<string, string>` | `{}` | Initial colors keyed by status label |
 | `onStatusColorsChange` | `(colors) => void` | — | Called when a color is picked in the legend |
-| `components` | `TimelineComponents` | `{}` | Replace built-in pieces: `TaskBar`, `TaskPopover`, `Legend`, `TimelineHeader` |
+| `components` | `TimelineComponents` | `{}` | Replace built-in pieces: `TaskBar`, `TaskPopover`, `Legend`, `TimelineHeader`, `TaskHeader`, `TaskListItem` |
 | `scrollRef` | `RefObject<HTMLDivElement>` | — | Usually `useTimeline().scrollRef`; enables `scrollToToday()` |
 | `className` | `string` | — | Extra classes on the root element |
 
@@ -155,6 +170,8 @@ component, wrap it, or write your own from scratch.
 | `TaskPopover` | `TaskPopover` | `task`, `popupFields`, `onClose`, `statusField`, `statusColors`, `locale`, `labels` |
 | `Legend` | `Legend` | `labels`, `statusOptions`, `statusColors`, `hasCustomStatusField`, `onColorChange` |
 | `TimelineHeader` | `TimelineHeader` | `timelineData`, `granularity`, `daySize`, `locale`, `weekRangeSeparator` |
+| `TaskHeader` | `TaskHeader` | `labels`, `hasGroupedRows`, `onExpandAll`, `onCollapseAll` |
+| `TaskListItem` | `TaskListItem` | `row`, `labels`, `onSelect`, `onToggleGroup` |
 
 ```tsx
 import {
@@ -188,9 +205,22 @@ const CustomLegend: TimelineComponents["Legend"] = (props) => (
 />;
 ```
 
-In this example `TaskPopover` and `TimelineHeader` keep their defaults. The
-components types (`TaskBarProps`, `TaskPopoverProps`, `LegendProps`,
-`TimelineHeaderProps`) are exported so replacements can be typed.
+In this example `TaskPopover`, `TimelineHeader`, `TaskHeader` and
+`TaskListItem` keep their defaults. The component types (`TaskBarProps`,
+`TaskPopoverProps`, `LegendProps`, `TimelineHeaderProps`, `TaskHeaderProps`,
+`TaskListItemProps`) are exported so replacements can be typed.
+
+`TaskHeader` is the frozen corner above the sidebar — the `tasksHeader` label
+and the expand/collapse-all buttons — and `TaskListItem` is one cell of the
+frozen task list: the task name, its indentation and, for a group, the caret
+that collapses or expands it. The timeline keeps the frozen positioning and
+border, renders one item per visible row and shows the empty state itself, so a
+replacement renders only the cell content.
+
+Each `TaskListItem` receives one `row`, already flattened and filtered by the
+timeline. A `TaskTreeRow` holds `task`, `id` (its stable position path, e.g.
+`"0-2"`), `depth` (indentation level), `hasChildren` and `collapsed`. Pass `id`
+to `onToggleGroup` to collapse or expand that group.
 
 ### What each default uses
 
@@ -203,6 +233,8 @@ any of them exactly. Nothing is kept internal:
 | `TaskPopover` | `getTaskStatuses`, `isDerivedStatus`, `STATUS_TONE`, `STATUS_BORDER`, `STATUS_ICON`, `parseDate`, `dayjs`, `cn` | status badges and the start/end/due detail lines |
 | `Legend` | `DEFAULT_STATUS_ORDER`, `DEFAULT_STATUS_COLORS`, `getGeneratedStatusColor`, `DerivedStatus`, `cn` | which statuses to list, their base and fallback colors |
 | `TimelineHeader` | `dayjs`, `cn`, `TimelineData`, `TimelineDay`, `Granularity`, `TimelineHeaderProps` | month/week/day cell labels from `timelineData.days` |
+| `TaskHeader` | `labels`, `TimelineLabels`, `react-icons/bi` | the title and the two expand/collapse buttons |
+| `TaskListItem` | `cn`, `labels`, `TaskTreeRow`, `react-icons/pi` | one cell: indentation, the name and the group caret |
 
 `dayjs` is re-exported from the package, so a custom component gets the same
 instance the built-ins use — with `customParseFormat`, `localizedFormat` and the
@@ -457,6 +489,11 @@ import {
   formatDateToISO,
   serialToISO,
   calculateDateRange,
+  flattenTasks,
+  getGroupTaskIds,
+  getInitiallyCollapsedTaskIds,
+  getTaskChildren,
+  getVisibleTaskRows,
   generateTimelineData,
   calculateDatePosition,
   getCurrentDatePosition,
@@ -475,6 +512,9 @@ import {
   cn,
   dayjs,                   // the same instance the components use
 } from "timeline-tasks";
+
+// Task tree types
+import type { TaskTreeRow, GetVisibleTaskRowsOptions } from "timeline-tasks";
 ```
 
 ## Development

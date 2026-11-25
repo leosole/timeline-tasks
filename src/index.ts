@@ -16,6 +16,10 @@ export { DEFAULT_STATUS_ORDER, Legend } from "./legend";
 export type { LegendProps } from "./legend";
 export { TaskBar } from "./task-bar";
 export type { TaskBarProps } from "./task-bar";
+export { TaskHeader } from "./task-header";
+export type { TaskHeaderProps } from "./task-header";
+export { TaskListItem } from "./task-list-item";
+export type { TaskListItemProps } from "./task-list-item";
 export { TaskPopover } from "./task-popover";
 export type { TaskPopoverProps } from "./task-popover";
 export { TimelineHeader } from "./timeline-header";
@@ -49,6 +53,15 @@ export type {
 
 export { calculateBarMetrics } from "./lib/bar-metrics";
 export type { BarMetrics } from "./lib/bar-metrics";
+
+export {
+  flattenTasks,
+  getGroupTaskIds,
+  getInitiallyCollapsedTaskIds,
+  getTaskChildren,
+  getVisibleTaskRows,
+} from "./lib/tasks";
+export type { GetVisibleTaskRowsOptions, TaskTreeRow } from "./lib/tasks";
 
 export {
   DEFAULT_STATUS_COLORS,

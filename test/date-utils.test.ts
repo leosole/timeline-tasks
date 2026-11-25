@@ -95,6 +95,17 @@ describe("calculateDateRange", () => {
     expect(range.end.format("YYYY-MM-DD")).toBe("2026-01-31");
   });
 
+  it("includes the dates of nested children", () => {
+    const range = calculateDateRange([
+      { name: "Phase", start: "2026-01-10", children: [
+        { name: "Child", end: "2026-01-20" },
+      ] },
+    ]);
+
+    expect(range.start.format("YYYY-MM-DD")).toBe("2026-01-05");
+    expect(range.end.format("YYYY-MM-DD")).toBe("2026-01-25");
+  });
+
   it("spans every touched month when tasks cross a month boundary", () => {
     const range = calculateDateRange(
       [

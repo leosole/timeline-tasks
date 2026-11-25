@@ -1,4 +1,5 @@
 import { getTaskStatuses } from "./status";
+import { flattenTasks } from "./tasks";
 import type { TimelineTask } from "../types";
 
 const CORE_FIELDS = new Set(["name", "start", "end", "due", "status"]);
@@ -22,10 +23,13 @@ export const getFilterOptions = (
   const options: Record<string, string[]> = {};
   if (!filterFields.length) return options;
 
+  const allTasks = flattenTasks(tasks);
   filterFields.forEach((field) => {
     if (CORE_FIELDS.has(field.toLowerCase())) return;
     options[field] = [
-      ...new Set(tasks.map((task) => String(task[field] ?? "")).filter(Boolean)),
+      ...new Set(
+        allTasks.map((task) => String(task[field] ?? "")).filter(Boolean),
+      ),
     ].sort();
   });
 
@@ -40,7 +44,7 @@ export const getStatusOptions = (
   const values = new Set<string>();
   if (!statusField) return [];
 
-  tasks.forEach((task) => {
+  flattenTasks(tasks).forEach((task) => {
     const value = task[statusField];
     if (value !== undefined && value !== null && String(value).trim()) {
       values.add(String(value).trim());

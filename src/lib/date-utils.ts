@@ -84,16 +84,23 @@ export const calculateDateRange = (
   let minDate: dayjs.Dayjs | null = null;
   let maxDate: dayjs.Dayjs | null = null;
 
-  for (const task of tasks) {
-    const rawDates = [task.start, task.end, task.due];
-    for (const raw of rawDates) {
-      if (!raw) continue;
-      const date = parseDate(raw as string | number);
-      if (!date || !date.isValid()) continue;
-      if (!minDate || date.isBefore(minDate)) minDate = date;
-      if (!maxDate || date.isAfter(maxDate)) maxDate = date;
+  // Nested children count too: a parent bar must never clip its subtasks.
+  const visit = (list: Array<Record<string, unknown>>) => {
+    for (const task of list) {
+      const rawDates = [task.start, task.end, task.due];
+      for (const raw of rawDates) {
+        if (!raw) continue;
+        const date = parseDate(raw as string | number);
+        if (!date || !date.isValid()) continue;
+        if (!minDate || date.isBefore(minDate)) minDate = date;
+        if (!maxDate || date.isAfter(maxDate)) maxDate = date;
+      }
+      if (Array.isArray(task.children)) {
+        visit(task.children as Array<Record<string, unknown>>);
+      }
     }
-  }
+  };
+  visit(tasks);
 
   if (!minDate || !maxDate) {
     return {

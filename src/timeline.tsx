@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
-import { BiCollapseVertical, BiExpandVertical } from "react-icons/bi";
-import { PiCaretDownBold } from "react-icons/pi";
 import { cn } from "./lib/cn";
 import { Legend } from "./legend";
 import { TaskBar } from "./task-bar";
+import { TaskHeader } from "./task-header";
+import { TaskListItem } from "./task-list-item";
 import { TaskPopover } from "./task-popover";
 import { TimelineHeader } from "./timeline-header";
 import { resolveLabels } from "./labels";
@@ -18,6 +18,11 @@ import {
   getDaySize,
 } from "./lib/date-utils";
 import { calculateBarMetrics, type BarMetrics } from "./lib/bar-metrics";
+import {
+  getGroupTaskIds,
+  getInitiallyCollapsedTaskIds,
+  getVisibleTaskRows,
+} from "./lib/tasks";
 
 const ROW_HEIGHT = 40;
 const SIDEBAR_WIDTH = 288;
@@ -47,13 +52,15 @@ export const Timeline: React.FC<TimelineProps> = ({
     TaskPopover: TaskPopoverComponent = TaskPopover,
     Legend: LegendComponent = Legend,
     TimelineHeader: TimelineHeaderComponent = TimelineHeader,
+    TaskHeader: TaskHeaderComponent = TaskHeader,
+    TaskListItem: TaskListItemComponent = TaskListItem,
   } = components ?? {};
 
   const [selectedTask, setSelectedTask] = useState<TimelineTask | null>(null);
   const [statusColors, setStatusColors] = useState<Record<string, string>>(
     () => ({ ...initialStatusColors }),
   );
-  const [collapsedParents, setCollapsedParents] = useState<Set<number>>(
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(
     () => new Set(),
   );
 
@@ -101,6 +108,15 @@ export const Timeline: React.FC<TimelineProps> = ({
     });
   }, [statusField, statusOptions.join(",")]);
 
+  const toggleGroup = useCallback((id: string) => {
+    setCollapsedIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
   const handleStatusColorChange = useCallback(
     (label: string, color: string) => {
       const next = { ...statusColors, [label]: color || "#808080" };
@@ -120,47 +136,24 @@ export const Timeline: React.FC<TimelineProps> = ({
     [filterState],
   );
 
-  const groupedParentRows = useMemo(() => {
-    const parents = new Set<number>();
+  const allGroupIds = useMemo(() => getGroupTaskIds(tasks), [tasks]);
+  const hasGroupedRows = allGroupIds.length > 0;
 
-    tasks.forEach((task) => {
-      if (typeof task.parentRow === "number") {
-        parents.add(task.parentRow);
-      }
-      if (
-        task.isGroupParent &&
-        typeof task.row === "number" &&
-        Number(task.groupChildCount || 0) > 0
-      ) {
-        parents.add(task.row);
-      }
-    });
-
-    return parents;
-  }, [tasks]);
-  const hasGroupedRows = groupedParentRows.size > 0;
-
-  const initialCollapsedParents = useMemo(() => {
-    const rows = new Set<number>();
-    tasks.forEach((task) => {
-      if (
-        task.isGroupParent &&
-        typeof task.row === "number" &&
-        task.groupCollapsed
-      ) {
-        rows.add(task.row);
-      }
-    });
-    return rows;
-  }, [tasks]);
-  const initialCollapsedKey = Array.from(initialCollapsedParents).join(",");
+  const initialCollapsedIds = useMemo(
+    () => getInitiallyCollapsedTaskIds(tasks),
+    [tasks],
+  );
+  const initialCollapsedKey = useMemo(
+    () => Array.from(new Set(initialCollapsedIds)).sort().join(","),
+    [initialCollapsedIds],
+  );
 
   useEffect(() => {
     if (!hasGroupedRows) {
-      setCollapsedParents(new Set());
+      setCollapsedIds(new Set());
       return;
     }
-    setCollapsedParents(initialCollapsedParents);
+    setCollapsedIds(new Set(initialCollapsedIds));
   }, [hasGroupedRows, initialCollapsedKey]);
 
   const filtersActive =
@@ -168,76 +161,24 @@ export const Timeline: React.FC<TimelineProps> = ({
     Object.keys(extraFieldFilters).length > 0 ||
     filter.trim().length > 0;
 
-  const matchingChildParentRows = useMemo(
+  // Groups holding a matching task are shown expanded while filtering.
+  const visibleRows = useMemo(
     () =>
-      hasGroupedRows && filtersActive
-        ? tasks.reduce((rows: Set<number>, task) => {
-            if (typeof task.parentRow === "number" && taskMatchesFilters(task)) {
-              rows.add(task.parentRow);
-            }
-            return rows;
-          }, new Set<number>())
-        : new Set<number>(),
-    [hasGroupedRows, filtersActive, tasks, taskMatchesFilters],
+      getVisibleTaskRows(tasks, {
+        collapsedIds,
+        matches: filtersActive ? taskMatchesFilters : undefined,
+      }),
+    [tasks, collapsedIds, filtersActive, taskMatchesFilters],
   );
-
-  const effectiveCollapsedParents = useMemo(() => {
-    const set = new Set<number>(collapsedParents);
-    matchingChildParentRows.forEach((row) => {
-      set.delete(row);
-    });
-    return set;
-  }, [collapsedParents, matchingChildParentRows]);
-
-  const displayedTasks = useMemo(() => {
-    const hasDate = (task: TimelineTask) => Boolean(task.start);
-
-    if (hasGroupedRows) {
-      return tasks.filter((task) => {
-        const rowParent =
-          typeof task.parentRow === "number" ? task.parentRow : -1;
-
-        if (rowParent >= 0) {
-          if (effectiveCollapsedParents.has(rowParent)) return false;
-          return taskMatchesFilters(task);
-        }
-
-        const rowNumber = typeof task.row === "number" ? task.row : -1;
-        const hasChildren = rowNumber >= 0 && groupedParentRows.has(rowNumber);
-
-        if (!hasChildren) {
-          return hasDate(task) && taskMatchesFilters(task);
-        }
-
-        if (taskMatchesFilters(task)) return true;
-        return rowNumber >= 0 && matchingChildParentRows.has(rowNumber);
-      });
-    }
-
-    return tasks
-      .filter((task) => hasDate(task) && taskMatchesFilters(task))
-      .sort(
-        (a, b) =>
-          (a.start ? parseInt(String(a.start).replace(/\//g, "")) : 0) -
-          (b.start ? parseInt(String(b.start).replace(/\//g, "")) : 0),
-      );
-  }, [
-    tasks,
-    hasGroupedRows,
-    effectiveCollapsedParents,
-    groupedParentRows,
-    matchingChildParentRows,
-    taskMatchesFilters,
-  ]);
 
   // Pre-compute bar metrics so scrolling does not allocate dayjs objects.
   const metricsCache = useMemo(() => {
     const cache = new Map<number, BarMetrics | null>();
-    displayedTasks.forEach((task, index) => {
+    visibleRows.forEach((row, index) => {
       cache.set(
         index,
         calculateBarMetrics(
-          task,
+          row.task,
           timelineData,
           granularity,
           statusField,
@@ -246,7 +187,7 @@ export const Timeline: React.FC<TimelineProps> = ({
       );
     });
     return cache;
-  }, [displayedTasks, timelineData, granularity, statusField, statusColors]);
+  }, [visibleRows, timelineData, granularity, statusField, statusColors]);
 
   return (
     <div
@@ -267,37 +208,18 @@ export const Timeline: React.FC<TimelineProps> = ({
           className="grid"
           style={{
             width: `max(100%, ${SIDEBAR_WIDTH + timelineData.totalDays * daySize}px)`,
-            height: `${HEADER_HEIGHT + displayedTasks.length * ROW_HEIGHT}px`,
+            height: `${HEADER_HEIGHT + visibleRows.length * ROW_HEIGHT}px`,
             gridTemplateColumns: `${SIDEBAR_WIDTH}px ${timelineData.totalDays * daySize}px`,
           }}
         >
           {/* ── [0,0] Sidebar header — frozen corner ─────────────── */}
-          <div className="sticky top-0 left-0 z-50 h-16 border-b border-border bg-muted flex items-center justify-between px-4">
-            <span className="font-semibold text-sm text-foreground">
-              {labels.tasksHeader}
-            </span>
-            {hasGroupedRows ? (
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setCollapsedParents(new Set())}
-                  className="cursor-pointer rounded-lg p-2 text-muted-foreground hover:bg-muted"
-                  title={labels.expandAll}
-                  aria-label={labels.expandAll}
-                >
-                  <BiExpandVertical />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCollapsedParents(new Set(groupedParentRows))}
-                  className="cursor-pointer rounded-lg p-2 text-muted-foreground hover:bg-muted"
-                  title={labels.collapseAll}
-                  aria-label={labels.collapseAll}
-                >
-                  <BiCollapseVertical />
-                </button>
-              </div>
-            ) : null}
+          <div className="sticky top-0 left-0 z-50 h-16 border-b border-border bg-muted">
+            <TaskHeaderComponent
+              labels={labels}
+              hasGroupedRows={hasGroupedRows}
+              onExpandAll={() => setCollapsedIds(new Set())}
+              onCollapseAll={() => setCollapsedIds(new Set(allGroupIds))}
+            />
           </div>
 
           {/* ── [0,1] Timeline header — sticks to top ─────────────── */}
@@ -322,56 +244,16 @@ export const Timeline: React.FC<TimelineProps> = ({
 
           {/* ── [1,0] Sidebar body — sticks to left ───────────────── */}
           <div className="sticky left-0 z-30 border-r border-border bg-background overflow-hidden">
-            {displayedTasks.map((task, index) => {
-              const rowNumber = typeof task.row === "number" ? task.row : -1;
-              const isChild = typeof task.parentRow === "number";
-              const hasChildren =
-                rowNumber >= 0 && groupedParentRows.has(rowNumber);
-              const isCollapsed =
-                rowNumber >= 0 && effectiveCollapsedParents.has(rowNumber);
-
-              return (
-                <div
-                  key={task.row ?? `row-${index}`}
-                  className="h-10 flex items-center px-4 text-sm hover:bg-muted/30 cursor-pointer border-b border-border"
-                  onClick={() => setSelectedTask(task)}
-                >
-                  <div className="flex min-w-0 items-center">
-                    {hasChildren ? (
-                      <button
-                        type="button"
-                        className="mr-1 flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-muted/60"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setCollapsedParents((previous) => {
-                            const next = new Set(previous);
-                            if (next.has(rowNumber)) next.delete(rowNumber);
-                            else next.add(rowNumber);
-                            return next;
-                          });
-                        }}
-                        aria-label={
-                          isCollapsed ? labels.expandGroup : labels.collapseGroup
-                        }
-                      >
-                        <PiCaretDownBold
-                          className={cn(
-                            "transition-transform duration-200",
-                            isCollapsed ? "rotate-0" : "rotate-180",
-                          )}
-                        />
-                      </button>
-                    ) : (
-                      <span className="mr-1 inline-block h-5 w-5 shrink-0" />
-                    )}
-                    <span className={cn("truncate", isChild && "ml-3")}>
-                      {task.name}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-            {displayedTasks.length === 0 && (
+            {visibleRows.map((row) => (
+              <TaskListItemComponent
+                key={row.id}
+                row={row}
+                labels={labels}
+                onSelect={setSelectedTask}
+                onToggleGroup={toggleGroup}
+              />
+            ))}
+            {visibleRows.length === 0 && (
               <div className="p-4 text-center text-sm text-muted-foreground italic">
                 {labels.empty}
               </div>
@@ -380,13 +262,13 @@ export const Timeline: React.FC<TimelineProps> = ({
 
           {/* ── [1,1] Timeline body — scrolls freely ──────────────── */}
           <div className="relative">
-            {displayedTasks.map((task, index) => (
+            {visibleRows.map((row, index) => (
               <div
-                key={task.row ?? `bar-${index}`}
+                key={row.id}
                 className="h-10 relative hover:bg-muted/30 flex items-center border-b border-border"
               >
                 <TaskBarComponent
-                  task={task}
+                  task={row.task}
                   timelineData={timelineData}
                   granularity={granularity}
                   onSelect={setSelectedTask}
@@ -403,7 +285,7 @@ export const Timeline: React.FC<TimelineProps> = ({
                 style={{
                   left: `${currentDatePx}px`,
                   top: 0,
-                  height: `${Math.max(displayedTasks.length * ROW_HEIGHT, 24)}px`,
+                  height: `${Math.max(visibleRows.length * ROW_HEIGHT, 24)}px`,
                 }}
               />
             )}

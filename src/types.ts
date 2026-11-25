@@ -2,6 +2,8 @@ import type { ComponentType, RefObject } from "react";
 import type { Granularity, TimelineData } from "./lib/date-utils";
 import type { TimelineLabels } from "./labels";
 import type { TaskBarProps } from "./task-bar";
+import type { TaskHeaderProps } from "./task-header";
+import type { TaskListItemProps } from "./task-list-item";
 import type { TaskPopoverProps } from "./task-popover";
 import type { LegendProps } from "./legend";
 import type { TimelineHeaderProps } from "./timeline-header";
@@ -12,20 +14,18 @@ import type { TimelineHeaderProps } from "./timeline-header";
  * `start`, `end` and `due` accept ISO (`2026-09-01`), Brazilian
  * (`01/09/2026`) or Excel serial (`45841`) values. Extra fields are kept so
  * they can be selected with `filterFields` and `popupFields`.
+ *
+ * Tasks nest through `children`: a task with children is a group header, and
+ * its descendants can be collapsed and expanded. Group identity comes from the
+ * task's position in the tree, so no row ids are needed.
  */
 export interface TimelineTask {
   name: string;
   start?: string | number | null;
   end?: string | number | null;
   due?: string | number | null;
-  /** Stable row identifier, required for grouping. */
-  row?: number;
-  /** `row` of the group this task belongs to. */
-  parentRow?: number;
-  /** Marks this row as a group parent. */
-  isGroupParent?: boolean;
-  /** Number of children, used to decide whether a row is a group. */
-  groupChildCount?: number;
+  /** Nested subtasks. A task with children acts as a group header. */
+  children?: TimelineTask[];
   /** Starts the group collapsed. */
   groupCollapsed?: boolean;
   [key: string]: unknown;
@@ -46,6 +46,10 @@ export interface TimelineComponents {
   Legend?: ComponentType<LegendProps>;
   /** Date header above the rows. */
   TimelineHeader?: ComponentType<TimelineHeaderProps>;
+  /** Frozen corner with the "Tasks" title and expand/collapse buttons. */
+  TaskHeader?: ComponentType<TaskHeaderProps>;
+  /** One frozen cell of the task list, rendered per visible row. */
+  TaskListItem?: ComponentType<TaskListItemProps>;
 }
 
 /**

@@ -92,7 +92,7 @@ export const TaskBar: React.FC<TaskBarProps> = React.memo(
           type="button"
           aria-label={String(task.name)}
           className={cn(
-            "absolute h-4 rounded border transition-all duration-200 z-10 cursor-pointer hover:outline-1 hover:outline-foreground",
+            "absolute h-4 rounded border z-10 cursor-pointer transition-[border-width] duration-300 ease-out hover:border-2",
             !metrics.customColors && metrics.colors.bg,
             !metrics.customColors && metrics.colors.border,
           )}
